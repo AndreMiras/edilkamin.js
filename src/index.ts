@@ -1,5 +1,7 @@
 import { ok } from "assert";
+import axios from "axios";
 import { Amplify, Auth } from "aws-amplify";
+import { API_URL } from "./constants";
 
 const amplifyconfiguration = {
   Auth: {
@@ -19,6 +21,9 @@ const signIn = async (username: string, password: string) => {
   }
 };
 
+const deviceInfo = (macAddress: string) =>
+  axios.get(`${API_URL}device/${macAddress}/info`);
+
 const main = () => {
   const { USERNAME, PASSWORD } = process.env;
   ok(USERNAME);
@@ -26,4 +31,4 @@ const main = () => {
   signIn(USERNAME, PASSWORD);
 };
 
-main();
+export { main, deviceInfo };
