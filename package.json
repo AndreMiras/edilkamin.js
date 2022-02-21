@@ -1,0 +1,29 @@
+{
+  "name": "edilkamin",
+  "version": "0.0.1",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "prettier --check src",
+    "format": "prettier --write src",
+    "build": "tsc"
+  },
+  "files": [
+    "/dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AndreMiras/edilkamin.js.git"
+  },
+  "author": "Andre Miras",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AndreMiras/edilkamin.js/issues"
+  },
+  "homepage": "https://github.com/AndreMiras/edilkamin.js#readme",
+  "dependencies": {
+    "@aws-amplify/cli": "^7.6.21",
+    "aws-amplify": "^4.3.14"
+  }
+}
