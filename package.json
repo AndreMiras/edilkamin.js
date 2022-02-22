@@ -25,5 +25,8 @@
   "dependencies": {
     "@aws-amplify/cli": "^7.6.21",
     "aws-amplify": "^4.3.14"
+  },
+  "devDependencies": {
+    "typedoc": "^0.22.12"
   }
 }
