@@ -27,6 +27,7 @@
     "aws-amplify": "^4.3.14"
   },
   "devDependencies": {
+    "prettier": "^2.5.1",
     "typedoc": "^0.22.12"
   }
 }
