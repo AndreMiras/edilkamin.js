@@ -1,6 +1,6 @@
 {
   "name": "edilkamin",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -23,10 +23,10 @@
   },
   "homepage": "https://github.com/AndreMiras/edilkamin.js#readme",
   "dependencies": {
-    "@aws-amplify/cli": "^7.6.21",
     "aws-amplify": "^4.3.14"
   },
   "devDependencies": {
+    "@aws-amplify/cli": "^7.6.21",
     "prettier": "^2.5.1",
     "typedoc": "^0.22.12"
   }
