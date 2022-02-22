@@ -24,6 +24,15 @@ const signIn = async (username: string, password: string) => {
 const deviceInfo = (macAddress: string) =>
   axios.get(`${API_URL}device/${macAddress}/info`);
 
+const mqttCommand = (macAddress: string, payload: any) =>
+  axios.put(`${API_URL}/mqtt/command`, { mac_address: macAddress, ...payload });
+
+const setPower = (macAddress: string, value: number) =>
+  mqttCommand(macAddress, { name: "power", value });
+
+const setPowerOn = (macAddress: string) => setPower(macAddress, 1);
+const setPowerOff = (macAddress: string) => setPower(macAddress, 0);
+
 const main = () => {
   const { USERNAME, PASSWORD } = process.env;
   ok(USERNAME);
@@ -31,4 +40,4 @@ const main = () => {
   signIn(USERNAME, PASSWORD);
 };
 
-export { main, deviceInfo };
+export { main, deviceInfo, setPower, setPowerOff, setPowerOn };

@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/AndreMiras/edilkamin.js#readme",
   "dependencies": {
+    "@aws-amplify/core": "^4.3.14",
     "aws-amplify": "^4.3.14"
   },
   "devDependencies": {
