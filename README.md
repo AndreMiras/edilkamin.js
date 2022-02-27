@@ -17,6 +17,16 @@ The Mind offers an app/API to remote control the Edilkamin pellet stoves.
 - [x] AWS Amplify/ Cognito authentication
 - [x] unauthenticated endpoint call
 - [ ] authenticated endpoint call
-- [ ] list stoves
+- [ ] ~list stoves~
 - [x] turn stove on/off
 - [ ] set temperature
+
+## Limitations
+It seems like there's no endpoint to list stoves associated to a user.
+The way the official app seem to work is by probing the stove via bluetooth.
+Then cache the stove MAC address to a local database for later use.
+
+## Security
+Accessing stove info and controlling it doesn't require any authentication.
+The stove's MAC address is all needed to control it once the stove is connected.
+This means leaking the MAC address to anyone would potentially give them access to it.
