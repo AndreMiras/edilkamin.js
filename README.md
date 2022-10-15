@@ -7,6 +7,9 @@
 This is a library for the [Reverse Engineered](docs/ReverseEngineering.md) "The Mind" Edilkamin API.
 The Mind offers an app/API to remote control the Edilkamin pellet stoves.
 
+October 2022 update: this no longer works as the API has changed.
+I'll work on it when I get a chance.
+
 
 ## Motivations
 - providing an open source web alternative
@@ -30,3 +33,5 @@ Then cache the stove MAC address to a local database for later use.
 Accessing stove info and controlling it doesn't require any authentication.
 The stove's MAC address is all needed to control it once the stove is connected.
 This means leaking the MAC address to anyone would potentially give them access to it.
+
+October 2022 update: Edilkamin recently addressed the security flaw and at the same time broke the library.

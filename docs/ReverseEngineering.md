@@ -34,7 +34,7 @@ jadx --output-dir base base.apk
 ```
 
 ## Looking into `strings.xml`
-Often an interesting starting point point is the `base/resources/res/values/strings.xml` file.
+Often an interesting starting point is the `base/resources/res/values/strings.xml` file.
 We find the usual `google_api_key` and `google_app_id`, but no endpoint prefix or anything that
 will be used in the short terms.
 
