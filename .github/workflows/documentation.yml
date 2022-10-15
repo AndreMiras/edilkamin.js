@@ -3,30 +3,30 @@ name: Documentation
 on:
   push:
     branches:
-    - main
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
-    - name: git config
-      run: |
-        git config user.name documentation-deploy-action
-        git config user.email documentation-deploy-action@@users.noreply.github.com
-        git remote set-url origin https://${{github.actor}}:${{github.token}}@github.com/${{github.repository}}.git
-    - run: yarn install
-    - run: yarn typedoc src/index.ts --out /tmp/docs
-    - name: deploy documentation
-      run: |
-        git ls-remote --exit-code . origin/gh-pages \
-          && git checkout -b gh-pages \
-          || git checkout --orphan gh-pages
-        git reset --hard
-        git pull --set-upstream origin gh-pages || echo probably first commit
-        cp --recursive /tmp/docs/. .
-        echo /node_modules > .gitignore
-        git add --all
-        git commit --all --message ":memo: docs: Update generated documentation"
-        git push origin gh-pages
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+      - name: git config
+        run: |
+          git config user.name documentation-deploy-action
+          git config user.email documentation-deploy-action@@users.noreply.github.com
+          git remote set-url origin https://${{github.actor}}:${{github.token}}@github.com/${{github.repository}}.git
+      - run: yarn install
+      - run: yarn typedoc src/index.ts --out /tmp/docs
+      - name: deploy documentation
+        run: |
+          git ls-remote --exit-code . origin/gh-pages \
+            && git checkout -b gh-pages \
+            || git checkout --orphan gh-pages
+          git reset --hard
+          git pull --set-upstream origin gh-pages || echo probably first commit
+          cp --recursive /tmp/docs/. .
+          echo /node_modules > .gitignore
+          git add --all
+          git commit --all --message ":memo: docs: Update generated documentation"
+          git push origin gh-pages
