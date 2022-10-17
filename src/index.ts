@@ -6,4 +6,11 @@ export {
   UserParametersType,
 } from "./types";
 
-export { main, deviceInfo, setPower, setPowerOff, setPowerOn } from "./library";
+export {
+  signIn,
+  main,
+  deviceInfo,
+  setPower,
+  setPowerOff,
+  setPowerOn,
+} from "./library";

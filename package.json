@@ -30,6 +30,7 @@
   "devDependencies": {
     "@aws-amplify/cli": "^7.6.21",
     "prettier": "^2.5.1",
+    "ts-node": "^10.9.1",
     "typedoc": "^0.22.12"
   }
 }

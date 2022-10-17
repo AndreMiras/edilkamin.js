@@ -139,3 +139,5 @@ https://fxtj7xkgc6.execute-api.eu-central-1.amazonaws.com/prod/mqtt/command
 It seems like most endpoints let you read info or control the stove without any authentication.
 All we need is a valid device MAC address.
 Don't leak your MAC address or people can potentially control your stove.
+
+October 2022 update: the endpoints got updated to require a JWT token and the stoves are linked to the account.
