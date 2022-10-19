@@ -6,8 +6,8 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "prettier --check src docs .github",
-    "format": "prettier --write src docs .github",
+    "lint": "prettier --check src docs .github *.md",
+    "format": "prettier --write src docs .github *.md",
     "build": "tsc"
   },
   "files": [
