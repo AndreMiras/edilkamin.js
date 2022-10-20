@@ -1,8 +1,8 @@
 import { ok } from "assert";
 import { Amplify, Auth } from "aws-amplify";
-
-import axios from "./axios";
+import axios, { AxiosInstance } from "axios";
 import { DeviceInfoType } from "./types";
+import { API_URL } from "./constants";
 
 const amplifyconfiguration = {
   Auth: {
@@ -23,25 +23,48 @@ const signIn = async (username: string, password: string): Promise<string> => {
   return user.getSignInUserSession().getAccessToken().jwtToken;
 };
 
-const deviceInfo = (jwtToken: string, macAddress: string) =>
-  axios.get<DeviceInfoType>(`device/${macAddress}/info`, {
-    headers: headers(jwtToken),
-  });
+const deviceInfo =
+  (axiosInstance: AxiosInstance) => (jwtToken: string, macAddress: string) =>
+    axiosInstance.get<DeviceInfoType>(`device/${macAddress}/info`, {
+      headers: headers(jwtToken),
+    });
 
-const mqttCommand = (jwtToken: string, macAddress: string, payload: any) =>
-  axios.put(
-    `mqtt/command`,
-    { mac_address: macAddress, ...payload },
-    { headers: headers(jwtToken) }
-  );
+const mqttCommand =
+  (axiosInstance: AxiosInstance) =>
+  (jwtToken: string, macAddress: string, payload: any) =>
+    axiosInstance.put(
+      `mqtt/command`,
+      { mac_address: macAddress, ...payload },
+      { headers: headers(jwtToken) }
+    );
 
-const setPower = (jwtToken: string, macAddress: string, value: number) =>
-  mqttCommand(jwtToken, macAddress, { name: "power", value });
+const setPower =
+  (axiosInstance: AxiosInstance) =>
+  (jwtToken: string, macAddress: string, value: number) =>
+    mqttCommand(axiosInstance)(jwtToken, macAddress, { name: "power", value });
 
-const setPowerOn = (jwtToken: string, macAddress: string) =>
-  setPower(jwtToken, macAddress, 1);
-const setPowerOff = (jwtToken: string, macAddress: string) =>
-  setPower(jwtToken, macAddress, 0);
+const setPowerOn =
+  (axiosInstance: AxiosInstance) => (jwtToken: string, macAddress: string) =>
+    setPower(axiosInstance)(jwtToken, macAddress, 1);
+const setPowerOff =
+  (axiosInstance: AxiosInstance) => (jwtToken: string, macAddress: string) =>
+    setPower(axiosInstance)(jwtToken, macAddress, 0);
+
+const configure = (baseURL: string = API_URL) => {
+  const axiosInstance = axios.create({ baseURL });
+  const deviceInfoInstance = deviceInfo(axiosInstance);
+  const setPowerInstance = setPower(axiosInstance);
+  const setPowerOffInstance = setPowerOff(axiosInstance);
+  const setPowerOnInstance = setPowerOn(axiosInstance);
+  return {
+    deviceInfo: deviceInfoInstance,
+    setPower: setPowerInstance,
+    setPowerOff: setPowerOffInstance,
+    setPowerOn: setPowerOnInstance,
+  };
+};
+
+const defaultApi = configure();
 
 const main = async () => {
   const { USERNAME, PASSWORD, MAC_ADDRESS } = process.env;
@@ -49,8 +72,8 @@ const main = async () => {
   ok(PASSWORD);
   ok(MAC_ADDRESS);
   const jwtToken = await signIn(USERNAME, PASSWORD);
-  const info = await deviceInfo(jwtToken, MAC_ADDRESS);
+  const info = await defaultApi.deviceInfo(jwtToken, MAC_ADDRESS);
   console.log({ info });
 };
 
-export { signIn, main, deviceInfo, setPower, setPowerOff, setPowerOn };
+export { signIn, configure };
