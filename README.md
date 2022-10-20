@@ -7,6 +7,44 @@
 This is a library for the [Reverse Engineered](docs/ReverseEngineering.md) "The Mind" Edilkamin API.
 The Mind offers an app/API to remote control the Edilkamin pellet stoves.
 
+## Install
+
+Using npm:
+
+```sh
+npm install edilkamin
+```
+
+Using yarn:
+
+```sh
+yarn add edilkamin
+```
+
+## Usage
+
+Basic usage:
+
+```js
+import { signIn, deviceInfo, setPowerOff } from "edilkamin";
+
+const macAddress = "aabbccddeeff";
+const token = signIn(username, password);
+deviceInfo(token, macAddress).then(console.log);
+setPowerOff(token, macAddress).then(console.log);
+```
+
+It's also possible to change the default backend URL:
+
+```js
+import { signIn, configure } from "edilkamin";
+
+const baseUrl = "https://my-proxy.com/";
+const { deviceInfo, setPower } = configure(baseUrl);
+deviceInfo(token, macAddress).then(console.log);
+setPower(token, macAddress, 0).then(console.log);
+```
+
 ## Motivations
 
 - providing an open source web alternative
