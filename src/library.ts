@@ -33,7 +33,7 @@ const mqttCommand =
   (axiosInstance: AxiosInstance) =>
   (jwtToken: string, macAddress: string, payload: any) =>
     axiosInstance.put(
-      `mqtt/command`,
+      "mqtt/command",
       { mac_address: macAddress, ...payload },
       { headers: headers(jwtToken) }
     );
