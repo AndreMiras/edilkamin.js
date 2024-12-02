@@ -5,6 +5,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
+    "cli": "ts-node src/cli.ts",
     "test": "mocha --require ts-node/register src/*.test.ts",
     "lint": "prettier --check src docs .github *.md",
     "format": "prettier --write src docs .github *.md",
@@ -23,6 +24,9 @@
     "url": "https://github.com/AndreMiras/edilkamin.js/issues"
   },
   "homepage": "https://github.com/AndreMiras/edilkamin.js#readme",
+  "bin": {
+    "edilkamin": "dist/cli.js"
+  },
   "dependencies": {
     "@aws-amplify/core": "^4.3.14",
     "aws-amplify": "^4.3.14",
@@ -37,5 +41,8 @@
     "sinon": "^19.0.2",
     "ts-node": "^10.9.1",
     "typedoc": "^0.22.12"
+  },
+  "optionalDependencies": {
+    "commander": "^12.1.0"
   }
 }

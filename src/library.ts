@@ -66,14 +66,4 @@ const configure = (baseURL: string = API_URL) => {
 
 const defaultApi = configure();
 
-const main = async () => {
-  const { USERNAME, PASSWORD, MAC_ADDRESS } = process.env;
-  ok(USERNAME);
-  ok(PASSWORD);
-  ok(MAC_ADDRESS);
-  const jwtToken = await signIn(USERNAME, PASSWORD);
-  const info = await defaultApi.deviceInfo(jwtToken, MAC_ADDRESS);
-  console.log({ info });
-};
-
 export { signIn, configure };

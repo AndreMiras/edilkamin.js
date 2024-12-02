@@ -45,6 +45,20 @@ deviceInfo(token, macAddress).then(console.log);
 setPower(token, macAddress, 0).then(console.log);
 ```
 
+## CLI
+
+The library includes a CLI tool that is useful for debugging.
+
+```sh
+yarn cli deviceInfo --mac $MAC --username $USERNAME --password $PASSWORD
+```
+
+Or with `npx` once the library is installed:
+
+```sh
+npx edilkamin deviceInfo --mac $MAC --username $USERNAME --password $PASSWORD
+```
+
 ## Motivations
 
 - providing an open source web alternative
