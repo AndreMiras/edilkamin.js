@@ -28,6 +28,16 @@ The Mind offers an app/API to remote control the Edilkamin pellet stoves.</p>
 <pre><code class="language-js"><span class="hl-1">import</span><span class="hl-0"> { </span><span class="hl-2">signIn</span><span class="hl-0">, </span><span class="hl-2">configure</span><span class="hl-0"> } </span><span class="hl-1">from</span><span class="hl-0"> </span><span class="hl-3">&quot;edilkamin&quot;</span><span class="hl-0">;</span><br/><br/><span class="hl-4">const</span><span class="hl-0"> </span><span class="hl-5">baseUrl</span><span class="hl-0"> = </span><span class="hl-3">&quot;https://my-proxy.com/&quot;</span><span class="hl-0">;</span><br/><span class="hl-4">const</span><span class="hl-0"> { </span><span class="hl-5">deviceInfo</span><span class="hl-0">, </span><span class="hl-5">setPower</span><span class="hl-0"> } = </span><span class="hl-6">configure</span><span class="hl-0">(</span><span class="hl-2">baseUrl</span><span class="hl-0">);</span><br/><span class="hl-6">deviceInfo</span><span class="hl-0">(</span><span class="hl-2">token</span><span class="hl-0">, </span><span class="hl-2">macAddress</span><span class="hl-0">).</span><span class="hl-6">then</span><span class="hl-0">(</span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-2">log</span><span class="hl-0">);</span><br/><span class="hl-6">setPower</span><span class="hl-0">(</span><span class="hl-2">token</span><span class="hl-0">, </span><span class="hl-2">macAddress</span><span class="hl-0">, </span><span class="hl-7">0</span><span class="hl-0">).</span><span class="hl-6">then</span><span class="hl-0">(</span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-2">log</span><span class="hl-0">);</span>
 </code></pre>
 
+<a href="#cli" id="cli" style="color: inherit; text-decoration: none;">
+  <h2>CLI</h2>
+</a>
+<p>The library includes a CLI tool that is useful for debugging.</p>
+<pre><code class="language-sh"><span class="hl-0">yarn cli deviceInfo --mac </span><span class="hl-2">$MAC</span><span class="hl-0"> --username </span><span class="hl-2">$USERNAME</span><span class="hl-0"> --password </span><span class="hl-2">$PASSWORD</span>
+</code></pre>
+<p>Or with <code>npx</code> once the library is installed:</p>
+<pre><code class="language-sh"><span class="hl-0">npx edilkamin deviceInfo --mac </span><span class="hl-2">$MAC</span><span class="hl-0"> --username </span><span class="hl-2">$USERNAME</span><span class="hl-0"> --password </span><span class="hl-2">$PASSWORD</span>
+</code></pre>
+
 <a href="#motivations" id="motivations" style="color: inherit; text-decoration: none;">
   <h2>Motivations</h2>
 </a>
