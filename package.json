@@ -13,9 +13,6 @@
     "format": "prettier --write src docs .github *.md",
     "build": "tsc"
   },
-  "files": [
-    "/dist"
-  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AndreMiras/edilkamin.js.git"

@@ -4,12 +4,13 @@
     "target": "es2015",
     "declaration": true,
     "outDir": "./dist",
+    "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "preserveConstEnums": true
   },
   "include": [
-    "src/**/*"
+    "src/**/*.ts"
   ]
 }
