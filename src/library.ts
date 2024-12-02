@@ -1,15 +1,14 @@
-import { ok } from "assert";
-import { Amplify, Auth } from "aws-amplify";
+import { strict as assert } from "assert";
+import { Amplify } from "aws-amplify";
+import * as amplifyAuth from "aws-amplify/auth";
 import axios, { AxiosInstance } from "axios";
 import { DeviceInfoType } from "./types";
 import { API_URL } from "./constants";
 
 const amplifyconfiguration = {
-  Auth: {
-    region: "eu-central-1",
-    userPoolId: "eu-central-1_BYmQ2VBlo",
-    userPoolWebClientId: "7sc1qltkqobo3ddqsk4542dg2h",
-  },
+  aws_project_region: "eu-central-1",
+  aws_user_pools_id: "eu-central-1_BYmQ2VBlo",
+  aws_user_pools_web_client_id: "7sc1qltkqobo3ddqsk4542dg2h",
 };
 Amplify.configure(amplifyconfiguration);
 
@@ -19,8 +18,14 @@ const headers = (jwtToken: string) => ({ Authorization: `Bearer ${jwtToken}` });
  * Sign in to return the JWT token.
  */
 const signIn = async (username: string, password: string): Promise<string> => {
-  const user = await Auth.signIn(username, password);
-  return user.getSignInUserSession().getAccessToken().jwtToken;
+  const { isSignedIn, nextStep } = await amplifyAuth.signIn({
+    username,
+    password,
+  });
+  assert.ok(isSignedIn);
+  const { tokens } = await amplifyAuth.fetchAuthSession();
+  assert.ok(tokens);
+  return tokens.accessToken.toString();
 };
 
 const deviceInfo =

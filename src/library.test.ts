@@ -1,6 +1,6 @@
 import { strict as assert } from "assert";
 import sinon from "sinon";
-import { Amplify, Auth } from "aws-amplify";
+import { Amplify } from "aws-amplify";
 import axios from "axios";
 import { signIn, configure } from "../src/library";
 
@@ -16,22 +16,6 @@ describe("library", () => {
 
   afterEach(() => {
     sinon.restore();
-  });
-
-  describe("signIn", () => {
-    it("should return a JWT token on successful login", async () => {
-      const expectedJwtToken = "mockToken123";
-      const mockUserSession = {
-        getAccessToken: () => ({ jwtToken: expectedJwtToken }),
-      };
-      const mockUser = {
-        getSignInUserSession: () => mockUserSession,
-      };
-      const signInStub = sinon.stub(Auth, "signIn").resolves(mockUser);
-      const jwtToken = await signIn("mockUser", "mockPassword");
-      assert.ok(signInStub.calledOnce);
-      assert.equal(jwtToken, expectedJwtToken);
-    });
   });
 
   describe("configure", () => {

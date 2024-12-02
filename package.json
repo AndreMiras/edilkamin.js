@@ -6,7 +6,9 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "cli": "ts-node src/cli.ts",
+    "cli:debug": "node --inspect --require ts-node/register/transpile-only src/cli.ts",
     "test": "mocha --require ts-node/register src/*.test.ts",
+    "test:debug": "mocha --require ts-node/register/transpile-only --inspect src/*.test.ts",
     "lint": "prettier --check src docs .github *.md",
     "format": "prettier --write src docs .github *.md",
     "build": "tsc"
@@ -28,9 +30,8 @@
     "edilkamin": "dist/cli.js"
   },
   "dependencies": {
-    "@aws-amplify/core": "^4.3.14",
-    "aws-amplify": "^4.3.14",
-    "aws-crt": "^1.14.5"
+    "aws-amplify": "^6.10.0",
+    "axios": "^0.26.0"
   },
   "devDependencies": {
     "@aws-amplify/cli": "^7.6.21",
@@ -40,7 +41,8 @@
     "prettier": "^2.5.1",
     "sinon": "^19.0.2",
     "ts-node": "^10.9.1",
-    "typedoc": "^0.22.12"
+    "typedoc": "^0.27.2",
+    "typescript": "^5.7.2"
   },
   "optionalDependencies": {
     "commander": "^12.1.0"
