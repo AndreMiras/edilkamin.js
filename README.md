@@ -1,6 +1,7 @@
 # Edilkamin.js
 
 [![Tests](https://github.com/AndreMiras/edilkamin.js/workflows/Tests/badge.svg)](https://github.com/AndreMiras/edilkamin.js/actions/workflows/tests.yml)
+[![CLI Tests](https://github.com/AndreMiras/edilkamin.js/actions/workflows/cli-tests.yml/badge.svg)](https://github.com/AndreMiras/edilkamin.js/actions/workflows/cli-tests.yml)
 [![Documentation](https://github.com/AndreMiras/edilkamin.js/workflows/Documentation/badge.svg)](https://github.com/AndreMiras/edilkamin.js/actions/workflows/documentation.yml)
 [![npm version](https://badge.fury.io/js/edilkamin.svg)](https://badge.fury.io/js/edilkamin)
 
