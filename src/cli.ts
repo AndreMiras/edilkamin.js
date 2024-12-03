@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-import { signIn, configure } from "./library";
 import { Command } from "commander";
 import readline from "readline";
+
 import { version } from "../package.json";
+import { configure, signIn } from "./library";
 
 const promptPassword = (): Promise<string> => {
   const rl = readline.createInterface({

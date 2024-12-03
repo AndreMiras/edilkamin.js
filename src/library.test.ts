@@ -1,6 +1,7 @@
 import { strict as assert } from "assert";
-import sinon from "sinon";
 import axios from "axios";
+import sinon from "sinon";
+
 import { configure } from "../src/library";
 
 describe("library", () => {
@@ -10,6 +11,7 @@ describe("library", () => {
     axiosStub = sinon.stub(axios, "create").returns({
       get: sinon.stub(),
       put: sinon.stub(),
+      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
     } as any);
   });
 
@@ -39,7 +41,8 @@ describe("library", () => {
           .stub()
           .resolves({ data: { id: "123", name: "Mock Device" } }),
       };
-      axiosStub.returns(mockAxios as any);
+
+      axiosStub.returns(mockAxios);
       const api = configure("https://example.com/api");
       const result = await api.deviceInfo("mockToken", "mockMacAddress");
       assert.ok(mockAxios.get.calledOnce);
@@ -57,7 +60,7 @@ describe("library", () => {
       const mockAxios = {
         put: sinon.stub().resolves({ status: 200 }),
       };
-      axiosStub.returns(mockAxios as any);
+      axiosStub.returns(mockAxios);
       const api = configure("https://example.com/api");
       const result = await api.setPowerOn("mockToken", "mockMacAddress");
       assert.ok(mockAxios.put.calledOnce);

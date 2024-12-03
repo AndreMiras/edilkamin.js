@@ -2,8 +2,9 @@ import { strict as assert } from "assert";
 import { Amplify } from "aws-amplify";
 import * as amplifyAuth from "aws-amplify/auth";
 import axios, { AxiosInstance } from "axios";
-import { DeviceInfoType } from "./types";
+
 import { API_URL } from "./constants";
+import { DeviceInfoType } from "./types";
 
 const amplifyconfiguration = {
   aws_project_region: "eu-central-1",
@@ -39,6 +40,7 @@ const deviceInfo =
 
 const mqttCommand =
   (axiosInstance: AxiosInstance) =>
+  // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   (jwtToken: string, macAddress: string, payload: any) =>
     axiosInstance.put(
       "mqtt/command",
@@ -72,4 +74,4 @@ const configure = (baseURL: string = API_URL) => {
   };
 };
 
-export { signIn, configure };
+export { configure, signIn };

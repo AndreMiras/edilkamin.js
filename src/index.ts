@@ -1,7 +1,7 @@
 import { configure } from "./library";
 
 export { API_URL } from "./constants";
-
+export { configure, signIn } from "./library";
 export {
   CommandsType,
   DeviceInfoType,
@@ -9,7 +9,5 @@ export {
   TemperaturesType,
   UserParametersType,
 } from "./types";
-
-export { signIn, configure } from "./library";
 
 export const { deviceInfo, setPower, setPowerOff, setPowerOn } = configure();
