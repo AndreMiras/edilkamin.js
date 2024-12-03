@@ -11,14 +11,20 @@ const amplifyconfiguration = {
   aws_user_pools_id: "eu-central-1_BYmQ2VBlo",
   aws_user_pools_web_client_id: "7sc1qltkqobo3ddqsk4542dg2h",
 };
-Amplify.configure(amplifyconfiguration);
 
 const headers = (jwtToken: string) => ({ Authorization: `Bearer ${jwtToken}` });
+
+const configureAmplify = () => {
+  const currentConfig = Amplify.getConfig();
+  if (Object.keys(currentConfig).length !== 0) return;
+  Amplify.configure(amplifyconfiguration);
+};
 
 /**
  * Sign in to return the JWT token.
  */
 const signIn = async (username: string, password: string): Promise<string> => {
+  configureAmplify();
   // in case the user is already signed in, refs:
   // https://github.com/aws-amplify/amplify-js/issues/13813
   await amplifyAuth.signOut();
