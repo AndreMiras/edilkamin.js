@@ -21,7 +21,7 @@ const signIn = async (username: string, password: string): Promise<string> => {
   // in case the user is already signed in, refs:
   // https://github.com/aws-amplify/amplify-js/issues/13813
   await amplifyAuth.signOut();
-  const { isSignedIn, nextStep } = await amplifyAuth.signIn({
+  const { isSignedIn } = await amplifyAuth.signIn({
     username,
     password,
   });
@@ -71,7 +71,5 @@ const configure = (baseURL: string = API_URL) => {
     setPowerOn: setPowerOnInstance,
   };
 };
-
-const defaultApi = configure();
 
 export { signIn, configure };

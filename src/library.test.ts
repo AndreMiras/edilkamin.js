@@ -1,8 +1,7 @@
 import { strict as assert } from "assert";
 import sinon from "sinon";
-import { Amplify } from "aws-amplify";
 import axios from "axios";
-import { signIn, configure } from "../src/library";
+import { configure } from "../src/library";
 
 describe("library", () => {
   let axiosStub: sinon.SinonStub;
