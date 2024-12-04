@@ -60,10 +60,11 @@ const createProgram = (): Command => {
       .requiredOption("-m, --mac <macAddress>", "MAC address of the device")
   ).action(async (options) => {
     const { username, password, mac } = options;
+    const normalizedMac = mac.replace(/:/g, "");
     const pwd = password || (await promptPassword());
     const jwtToken = await signIn(username, pwd);
     const api = configure(); // Use the default API configuration
-    const deviceInfo = await api.deviceInfo(jwtToken, mac);
+    const deviceInfo = await api.deviceInfo(jwtToken, normalizedMac);
     console.log("Device Info:", deviceInfo.data);
   });
   return program;
