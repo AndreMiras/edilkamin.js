@@ -3,6 +3,7 @@ import axios from "axios";
 import sinon from "sinon";
 
 import { configure, createAuthService } from "../src/library";
+import { API_URL } from "./constants";
 
 describe("library", () => {
   let axiosStub: sinon.SinonStub;
@@ -85,6 +86,22 @@ describe("library", () => {
         [
           {
             baseURL,
+          },
+        ],
+      ]);
+      assert.deepEqual(Object.keys(api), [
+        "deviceInfo",
+        "setPower",
+        "setPowerOff",
+        "setPowerOn",
+      ]);
+    });
+    it("should create API methods with the default baseURL", () => {
+      const api = configure();
+      assert.deepEqual(axiosStub.args, [
+        [
+          {
+            baseURL: API_URL,
           },
         ],
       ]);
