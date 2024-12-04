@@ -12,8 +12,17 @@ const amplifyconfiguration = {
   aws_user_pools_web_client_id: "7sc1qltkqobo3ddqsk4542dg2h",
 };
 
+/**
+ * Generates headers with a JWT token for authenticated requests.
+ * @param {string} jwtToken - The JWT token for authorization.
+ * @returns {object} - The headers object with the Authorization field.
+ */
 const headers = (jwtToken: string) => ({ Authorization: `Bearer ${jwtToken}` });
 
+/**
+ * Configures Amplify if not already configured.
+ * Ensures the configuration is only applied once.
+ */
 const configureAmplify = () => {
   const currentConfig = Amplify.getConfig();
   if (Object.keys(currentConfig).length !== 0) return;
@@ -21,22 +30,35 @@ const configureAmplify = () => {
 };
 
 /**
- * Sign in to return the JWT token.
+ * Creates an authentication service with sign-in functionality.
+ * @param {typeof amplifyAuth} auth - The authentication module to use.
+ * @returns {object} - An object containing authentication-related methods.
  */
-const signIn = async (username: string, password: string): Promise<string> => {
-  configureAmplify();
-  // in case the user is already signed in, refs:
-  // https://github.com/aws-amplify/amplify-js/issues/13813
-  await amplifyAuth.signOut();
-  const { isSignedIn } = await amplifyAuth.signIn({
-    username,
-    password,
-  });
-  assert.ok(isSignedIn);
-  const { tokens } = await amplifyAuth.fetchAuthSession();
-  assert.ok(tokens);
-  return tokens.accessToken.toString();
+const createAuthService = (auth: typeof amplifyAuth) => {
+  /**
+   * Signs in a user with the provided credentials.
+   * @param {string} username - The username of the user.
+   * @param {string} password - The password of the user.
+   * @returns {Promise<string>} - The JWT token of the signed-in user.
+   * @throws {Error} - If sign-in fails or no tokens are retrieved.
+   */
+  const signIn = async (
+    username: string,
+    password: string
+  ): Promise<string> => {
+    configureAmplify();
+    await auth.signOut(); // Ensure the user is signed out first
+    const { isSignedIn } = await auth.signIn({ username, password });
+    assert.ok(isSignedIn, "Sign-in failed");
+    const { tokens } = await auth.fetchAuthSession();
+    assert.ok(tokens, "No tokens found");
+    return tokens.accessToken.toString();
+  };
+  return { signIn };
 };
+
+// Create the default auth service using amplifyAuth
+const { signIn } = createAuthService(amplifyAuth);
 
 const deviceInfo =
   (axiosInstance: AxiosInstance) => (jwtToken: string, macAddress: string) =>
@@ -80,4 +102,4 @@ const configure = (baseURL: string = API_URL) => {
   };
 };
 
-export { configure, signIn };
+export { configure, createAuthService, headers, signIn };

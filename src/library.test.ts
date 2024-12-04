@@ -2,7 +2,7 @@ import { strict as assert } from "assert";
 import axios from "axios";
 import sinon from "sinon";
 
-import { configure } from "../src/library";
+import { configure, createAuthService } from "../src/library";
 
 describe("library", () => {
   let axiosStub: sinon.SinonStub;
@@ -17,6 +17,64 @@ describe("library", () => {
 
   afterEach(() => {
     sinon.restore();
+  });
+
+  describe("signIn", () => {
+    it("should sign in and return the JWT token", async () => {
+      const expectedUsername = "testuser";
+      const expectedPassword = "testpassword";
+      const expectedToken = "mockJwtToken";
+      const signIn = sinon.stub().resolves({ isSignedIn: true });
+      const signOut = sinon.stub();
+      const fetchAuthSession = sinon.stub().resolves({
+        tokens: {
+          accessToken: { toString: () => expectedToken },
+        },
+      });
+      const authStub = {
+        signIn,
+        signOut,
+        fetchAuthSession,
+      };
+      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+      const authService = createAuthService(authStub as any);
+      const token = await authService.signIn(
+        expectedUsername,
+        expectedPassword
+      );
+      assert.deepEqual(authStub.signOut.args, [[]]);
+      assert.deepEqual(signIn.args, [
+        [{ username: expectedUsername, password: expectedPassword }],
+      ]);
+      assert.equal(token, expectedToken);
+    });
+
+    it("should throw an error if sign-in fails", async () => {
+      const expectedUsername = "testuser";
+      const expectedPassword = "testpassword";
+      const expectedToken = "mockJwtToken";
+      const signIn = sinon.stub().resolves({ isSignedIn: false });
+      const signOut = sinon.stub();
+      const fetchAuthSession = sinon.stub().resolves({
+        tokens: {
+          accessToken: { toString: () => expectedToken },
+        },
+      });
+      const authStub = {
+        signIn,
+        signOut,
+        fetchAuthSession,
+      };
+      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+      const authService = createAuthService(authStub as any);
+      await assert.rejects(
+        async () => authService.signIn(expectedUsername, expectedPassword),
+        {
+          name: "AssertionError",
+          message: "Sign-in failed",
+        }
+      );
+    });
   });
 
   describe("configure", () => {
