@@ -8,8 +8,8 @@
   "scripts": {
     "cli": "ts-node src/cli.ts",
     "cli:debug": "node --inspect --require ts-node/register/transpile-only src/cli.ts",
-    "test": "mocha --require ts-node/register src/*.test.ts",
-    "test:debug": "mocha --require ts-node/register/transpile-only --inspect src/*.test.ts",
+    "test": "nyc mocha --require ts-node/register src/*.test.ts",
+    "test:debug": "nyc mocha --require ts-node/register/transpile-only --inspect src/*.test.ts",
     "lint:prettier": "prettier --check src docs .github *.json *.md *.mjs",
     "format:prettier": "prettier --write src docs .github *.json *.md *.mjs",
     "lint:eslint": "eslint src",
@@ -33,6 +33,12 @@
   "bin": {
     "edilkamin": "dist/cjs/cli.js"
   },
+  "nyc": {
+    "reporter": [
+      "html",
+      "text"
+    ]
+  },
   "dependencies": {
     "aws-amplify": "^6.10.0",
     "axios": "^0.26.0"
@@ -50,6 +56,7 @@
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "mocha": "^10.8.2",
+    "nyc": "^17.1.0",
     "prettier": "^2.5.1",
     "sinon": "^19.0.2",
     "ts-node": "^10.9.1",
