@@ -62,6 +62,13 @@ const { signIn } = createAuthService(amplifyAuth);
 
 const deviceInfo =
   (axiosInstance: AxiosInstance) =>
+  /**
+   * Retrieves information about a device by its MAC address.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<DeviceInfoType>} - A promise that resolves to the device info.
+   */
   async (jwtToken: string, macAddress: string) => {
     const response = await axiosInstance.get<DeviceInfoType>(
       `device/${macAddress}/info`,
@@ -82,53 +89,104 @@ const mqttCommand =
       { headers: headers(jwtToken) }
     );
 
-/**
- * Set device power.
- * Return response string e.g. "Command 0123456789abcdef executed successfully".
- */
 const setPower =
   (axiosInstance: AxiosInstance) =>
+  /**
+   * Sends a command to set the power state of a device.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number} value - The desired power state (1 for ON, 0 for OFF).
+   * @returns {Promise<string>} - A promise that resolves to the command response.
+   */
   (jwtToken: string, macAddress: string, value: number) =>
     mqttCommand(axiosInstance)(jwtToken, macAddress, { name: "power", value });
 
 const setPowerOn =
-  (axiosInstance: AxiosInstance) => (jwtToken: string, macAddress: string) =>
+  (axiosInstance: AxiosInstance) =>
+  /**
+   * Turns a device ON by setting its power state.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<string>} - A promise that resolves to the command response.
+   *
+   * @example
+   * const response = await api.setPowerOn(jwtToken, macAddress);
+   * console.log(response);
+   */
+  (jwtToken: string, macAddress: string) =>
     setPower(axiosInstance)(jwtToken, macAddress, 1);
 
 const setPowerOff =
-  (axiosInstance: AxiosInstance) => (jwtToken: string, macAddress: string) =>
+  (axiosInstance: AxiosInstance) =>
+  /**
+   * Turns a device OFF by setting its power state.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<string>} - A promise that resolves to the command response.
+   *
+   * @example
+   * const response = await api.setPowerOff(jwtToken, macAddress);
+   * console.log(response);
+   */
+  (jwtToken: string, macAddress: string) =>
     setPower(axiosInstance)(jwtToken, macAddress, 0);
 
-/**
- * Get device current power value.
- */
 const getPower =
   (axiosInstance: AxiosInstance) =>
+  /**
+   * Retrieves the power status of the device.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<boolean>} - A promise that resolves to the power status.
+   */
   async (jwtToken: string, macAddress: string): Promise<boolean> => {
     const info = await deviceInfo(axiosInstance)(jwtToken, macAddress);
     return info.status.commands.power;
   };
 
-/**
- * Get the environment temperature coming from sensors.
- */
 const getEnvironmentTemperature =
   (axiosInstance: AxiosInstance) =>
+  /**
+   * Retrieves the environment temperature from the device's sensors.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - A promise that resolves to the temperature value.
+   */
   async (jwtToken: string, macAddress: string): Promise<number> => {
     const info = await deviceInfo(axiosInstance)(jwtToken, macAddress);
     return info.status.temperatures.enviroment;
   };
 
-/**
- * Get target temperature value.
- */
 const getTargetTemperature =
   (axiosInstance: AxiosInstance) =>
+  /**
+   * Retrieves the target temperature value set on the device.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - A promise that resolves to the target temperature.
+   */
   async (jwtToken: string, macAddress: string): Promise<number> => {
     const info = await deviceInfo(axiosInstance)(jwtToken, macAddress);
     return info.nvm.user_parameters.enviroment_1_temperature;
   };
 
+/**
+ * Configures the library for API interactions.
+ * Initializes API methods with a specified base URL.
+ *
+ * @param {string} [baseURL=API_URL] - The base URL for the API.
+ * @returns {object} - An object containing methods for interacting with the API.
+ *
+ * @example
+ * const api = configure();
+ * const power = await api.getPower(jwtToken, macAddress);
+ */
 const configure = (baseURL: string = API_URL) => {
   const axiosInstance = axios.create({ baseURL });
   const deviceInfoInstance = deviceInfo(axiosInstance);
