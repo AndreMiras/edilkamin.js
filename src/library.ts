@@ -61,10 +61,16 @@ const createAuthService = (auth: typeof amplifyAuth) => {
 const { signIn } = createAuthService(amplifyAuth);
 
 const deviceInfo =
-  (axiosInstance: AxiosInstance) => (jwtToken: string, macAddress: string) =>
-    axiosInstance.get<DeviceInfoType>(`device/${macAddress}/info`, {
-      headers: headers(jwtToken),
-    });
+  (axiosInstance: AxiosInstance) =>
+  async (jwtToken: string, macAddress: string) => {
+    const response = await axiosInstance.get<DeviceInfoType>(
+      `device/${macAddress}/info`,
+      {
+        headers: headers(jwtToken),
+      }
+    );
+    return response.data;
+  };
 
 const mqttCommand =
   (axiosInstance: AxiosInstance) =>
@@ -76,6 +82,10 @@ const mqttCommand =
       { headers: headers(jwtToken) }
     );
 
+/**
+ * Set device power.
+ * Return response string e.g. "Command 0123456789abcdef executed successfully".
+ */
 const setPower =
   (axiosInstance: AxiosInstance) =>
   (jwtToken: string, macAddress: string, value: number) =>
@@ -84,6 +94,7 @@ const setPower =
 const setPowerOn =
   (axiosInstance: AxiosInstance) => (jwtToken: string, macAddress: string) =>
     setPower(axiosInstance)(jwtToken, macAddress, 1);
+
 const setPowerOff =
   (axiosInstance: AxiosInstance) => (jwtToken: string, macAddress: string) =>
     setPower(axiosInstance)(jwtToken, macAddress, 0);

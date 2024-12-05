@@ -32,10 +32,40 @@ const promptPassword = (): Promise<string> => {
  * @param command The command to which options should be added.
  * @returns The command with options added.
  */
-const addCommonOptions = (command: Command): Command =>
+const addAuthOptions = (command: Command): Command =>
   command
     .requiredOption("-u, --username <username>", "Username")
     .option("-p, --password <password>", "Password");
+
+/**
+ * Adds MAC address option to a command.
+ * @param command The command to which the MAC address option should be added.
+ * @returns The command with the MAC address option added.
+ */
+const addMacOption = (command: Command): Command =>
+  command.requiredOption("-m, --mac <macAddress>", "MAC address of the device");
+
+/**
+ * Executes a getter command by handling common steps (authentication, API initialization).
+ * @param options The options passed from the CLI command.
+ * @param getter A function to call on the configured API object.
+ */
+const executeGetter = async (
+  options: { username: string; password?: string; mac: string },
+  getter: (
+    api: ReturnType<typeof configure>,
+    jwtToken: string,
+    mac: string
+  ) => Promise<unknown>
+): Promise<void> => {
+  const { username, password, mac } = options;
+  const normalizedMac = mac.replace(/:/g, "");
+  const pwd = password || (await promptPassword());
+  const jwtToken = await signIn(username, pwd);
+  const api = configure();
+  const result = await getter(api, jwtToken, normalizedMac);
+  console.log(result);
+};
 
 const createProgram = (): Command => {
   const program = new Command();
@@ -44,7 +74,7 @@ const createProgram = (): Command => {
     .description("CLI tool for interacting with the Edilkamin API")
     .version(version);
   // Command: signIn
-  addCommonOptions(
+  addAuthOptions(
     program.command("signIn").description("Sign in and retrieve a JWT token")
   ).action(async (options) => {
     const { username, password } = options;
@@ -52,21 +82,23 @@ const createProgram = (): Command => {
     const jwtToken = await signIn(username, pwd);
     console.log("JWT Token:", jwtToken);
   });
-  // Command: deviceInfo
-  addCommonOptions(
-    program
-      .command("deviceInfo")
-      .description("Retrieve device info for a specific MAC address")
-      .requiredOption("-m, --mac <macAddress>", "MAC address of the device")
-  ).action(async (options) => {
-    const { username, password, mac } = options;
-    const normalizedMac = mac.replace(/:/g, "");
-    const pwd = password || (await promptPassword());
-    const jwtToken = await signIn(username, pwd);
-    const api = configure(); // Use the default API configuration
-    const deviceInfo = await api.deviceInfo(jwtToken, normalizedMac);
-    console.log("Device Info:", deviceInfo.data);
+  // Generic getter commands
+  [
+    {
+      commandName: "deviceInfo",
+      description: "Retrieve device info for a specific MAC address",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string
+      ) => api.deviceInfo(jwtToken, mac),
+    },
+  ].forEach(({ commandName, description, getter }) => {
+    addMacOption(
+      addAuthOptions(program.command(commandName).description(description))
+    ).action((options) => executeGetter(options, getter));
   });
+
   return program;
 };
 

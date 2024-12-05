@@ -7,6 +7,7 @@ import { API_URL } from "./constants";
 
 describe("library", () => {
   let axiosStub: sinon.SinonStub;
+  const expectedToken = "mockJwtToken";
 
   beforeEach(() => {
     axiosStub = sinon.stub(axios, "create").returns({
@@ -24,7 +25,6 @@ describe("library", () => {
     it("should sign in and return the JWT token", async () => {
       const expectedUsername = "testuser";
       const expectedPassword = "testpassword";
-      const expectedToken = "mockJwtToken";
       const signIn = sinon.stub().resolves({ isSignedIn: true });
       const signOut = sinon.stub();
       const fetchAuthSession = sinon.stub().resolves({
@@ -53,7 +53,6 @@ describe("library", () => {
     it("should throw an error if sign-in fails", async () => {
       const expectedUsername = "testuser";
       const expectedPassword = "testpassword";
-      const expectedToken = "mockJwtToken";
       const signIn = sinon.stub().resolves({ isSignedIn: false });
       const signOut = sinon.stub();
       const fetchAuthSession = sinon.stub().resolves({
@@ -79,6 +78,7 @@ describe("library", () => {
   });
 
   describe("configure", () => {
+    const expectedApi = ["deviceInfo", "setPower", "setPowerOff", "setPowerOn"];
     it("should create API methods with the correct baseURL", () => {
       const baseURL = "https://example.com/api";
       const api = configure(baseURL);
@@ -89,12 +89,7 @@ describe("library", () => {
           },
         ],
       ]);
-      assert.deepEqual(Object.keys(api), [
-        "deviceInfo",
-        "setPower",
-        "setPowerOff",
-        "setPowerOn",
-      ]);
+      assert.deepEqual(Object.keys(api), expectedApi);
     });
     it("should create API methods with the default baseURL", () => {
       const api = configure();
@@ -105,21 +100,30 @@ describe("library", () => {
           },
         ],
       ]);
-      assert.deepEqual(Object.keys(api), [
-        "deviceInfo",
-        "setPower",
-        "setPowerOff",
-        "setPowerOn",
-      ]);
+      assert.deepEqual(Object.keys(api), expectedApi);
     });
   });
 
   describe("API Methods", () => {
+    const mockDeviceInfo = {
+      status: {
+        commands: {
+          power: true,
+        },
+        temperatures: {
+          enviroment: 19,
+        },
+      },
+      nvm: {
+        user_parameters: {
+          enviroment_1_temperature: 22,
+        },
+      },
+    };
+
     it("should call axios for deviceInfo", async () => {
-      const expectedDevice = { id: "123", name: "Mock Device" };
-      const expectedToken = "mockToken";
       const mockAxios = {
-        get: sinon.stub().resolves({ data: expectedDevice }),
+        get: sinon.stub().resolves({ data: mockDeviceInfo }),
       };
       axiosStub.returns(mockAxios);
       const api = configure("https://example.com/api");
@@ -130,7 +134,7 @@ describe("library", () => {
           { headers: { Authorization: `Bearer ${expectedToken}` } },
         ],
       ]);
-      assert.deepEqual(result.data, expectedDevice);
+      assert.deepEqual(result, mockDeviceInfo);
     });
 
     // Tests for setPowerOn and setPowerOff
