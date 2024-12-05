@@ -93,6 +93,33 @@ const createProgram = (): Command => {
         mac: string
       ) => api.deviceInfo(jwtToken, mac),
     },
+    {
+      commandName: "getPower",
+      description: "Retrieve device power status",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string
+      ) => api.getPower(jwtToken, mac),
+    },
+    {
+      commandName: "getEnvironmentTemperature",
+      description: "Retrieve environment temperature",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string
+      ) => api.getEnvironmentTemperature(jwtToken, mac),
+    },
+    {
+      commandName: "getTargetTemperature",
+      description: "Retrieve target temperature",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string
+      ) => api.getTargetTemperature(jwtToken, mac),
+    },
   ].forEach(({ commandName, description, getter }) => {
     addMacOption(
       addAuthOptions(program.command(commandName).description(description))

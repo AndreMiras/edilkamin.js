@@ -99,17 +99,54 @@ const setPowerOff =
   (axiosInstance: AxiosInstance) => (jwtToken: string, macAddress: string) =>
     setPower(axiosInstance)(jwtToken, macAddress, 0);
 
+/**
+ * Get device current power value.
+ */
+const getPower =
+  (axiosInstance: AxiosInstance) =>
+  async (jwtToken: string, macAddress: string): Promise<boolean> => {
+    const info = await deviceInfo(axiosInstance)(jwtToken, macAddress);
+    return info.status.commands.power;
+  };
+
+/**
+ * Get the environment temperature coming from sensors.
+ */
+const getEnvironmentTemperature =
+  (axiosInstance: AxiosInstance) =>
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(axiosInstance)(jwtToken, macAddress);
+    return info.status.temperatures.enviroment;
+  };
+
+/**
+ * Get target temperature value.
+ */
+const getTargetTemperature =
+  (axiosInstance: AxiosInstance) =>
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(axiosInstance)(jwtToken, macAddress);
+    return info.nvm.user_parameters.enviroment_1_temperature;
+  };
+
 const configure = (baseURL: string = API_URL) => {
   const axiosInstance = axios.create({ baseURL });
   const deviceInfoInstance = deviceInfo(axiosInstance);
   const setPowerInstance = setPower(axiosInstance);
   const setPowerOffInstance = setPowerOff(axiosInstance);
   const setPowerOnInstance = setPowerOn(axiosInstance);
+  const getPowerInstance = getPower(axiosInstance);
+  const getEnvironmentTemperatureInstance =
+    getEnvironmentTemperature(axiosInstance);
+  const getTargetTemperatureInstance = getTargetTemperature(axiosInstance);
   return {
     deviceInfo: deviceInfoInstance,
     setPower: setPowerInstance,
     setPowerOff: setPowerOffInstance,
     setPowerOn: setPowerOnInstance,
+    getPower: getPowerInstance,
+    getEnvironmentTemperature: getEnvironmentTemperatureInstance,
+    getTargetTemperature: getTargetTemperatureInstance,
   };
 };
 

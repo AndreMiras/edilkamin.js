@@ -78,7 +78,15 @@ describe("library", () => {
   });
 
   describe("configure", () => {
-    const expectedApi = ["deviceInfo", "setPower", "setPowerOff", "setPowerOn"];
+    const expectedApi = [
+      "deviceInfo",
+      "setPower",
+      "setPowerOff",
+      "setPowerOn",
+      "getPower",
+      "getEnvironmentTemperature",
+      "getTargetTemperature",
+    ];
     it("should create API methods with the correct baseURL", () => {
       const baseURL = "https://example.com/api";
       const api = configure(baseURL);
@@ -175,6 +183,46 @@ describe("library", () => {
           ],
         ]);
         assert.equal(result.status, 200);
+      });
+    });
+
+    const getterTests = [
+      {
+        method: "getPower",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getPower(token, mac),
+        expectedResult: true,
+      },
+      {
+        method: "getEnvironmentTemperature",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getEnvironmentTemperature(token, mac),
+        expectedResult: 19,
+      },
+      {
+        method: "getTargetTemperature",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getTargetTemperature(token, mac),
+        expectedResult: 22,
+      },
+    ];
+    getterTests.forEach(({ method, call, expectedResult }) => {
+      it(`should call axios and return the correct value for ${method}`, async () => {
+        const mockAxios = {
+          get: sinon.stub().resolves({ data: mockDeviceInfo }),
+        };
+        axiosStub.returns(mockAxios);
+        const api = configure("https://example.com/api");
+
+        const result = await call(api, expectedToken, "mockMacAddress");
+
+        assert.deepEqual(mockAxios.get.args, [
+          [
+            "device/mockMacAddress/info",
+            { headers: { Authorization: `Bearer ${expectedToken}` } },
+          ],
+        ]);
+        assert.equal(result, expectedResult);
       });
     });
   });

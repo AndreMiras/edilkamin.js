@@ -10,4 +10,12 @@ export {
   UserParametersType,
 } from "./types";
 
-export const { deviceInfo, setPower, setPowerOff, setPowerOn } = configure();
+export const {
+  deviceInfo,
+  setPower,
+  setPowerOff,
+  setPowerOn,
+  getPower,
+  getEnvironmentTemperature,
+  getTargetTemperature,
+} = configure();
