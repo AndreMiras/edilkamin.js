@@ -67,6 +67,29 @@ const executeGetter = async (
   console.log(result);
 };
 
+/**
+ * Executes a setter command by handling common steps (authentication, API initialization).
+ * @param options The options passed from the CLI command.
+ * @param setter A function to call on the configured API object.
+ */
+const executeSetter = async (
+  options: { username: string; password?: string; mac: string; value: number },
+  setter: (
+    api: ReturnType<typeof configure>,
+    jwtToken: string,
+    mac: string,
+    value: number
+  ) => Promise<unknown>
+): Promise<void> => {
+  const { username, password, mac, value } = options;
+  const normalizedMac = mac.replace(/:/g, "");
+  const pwd = password || (await promptPassword());
+  const jwtToken = await signIn(username, pwd);
+  const api = configure();
+  const result = await setter(api, jwtToken, normalizedMac, value);
+  console.log(result);
+};
+
 const createProgram = (): Command => {
   const program = new Command();
   program
@@ -124,6 +147,35 @@ const createProgram = (): Command => {
     addMacOption(
       addAuthOptions(program.command(commandName).description(description))
     ).action((options) => executeGetter(options, getter));
+  });
+  // Generic setter commands
+  [
+    {
+      commandName: "setPower",
+      description: "Set the power state of the device (1 for ON, 0 for OFF)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number
+      ) => api.setPower(jwtToken, mac, value),
+    },
+    {
+      commandName: "setTargetTemperature",
+      description: "Set the target temperature (degree celsius) for a device",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number
+      ) => api.setTargetTemperature(jwtToken, mac, value),
+    },
+  ].forEach(({ commandName, description, setter }) => {
+    addMacOption(
+      addAuthOptions(
+        program.command(commandName).description(description)
+      ).requiredOption("-v, --value <number>", "Value to set", parseFloat)
+    ).action((options) => executeSetter(options, setter));
   });
 
   return program;

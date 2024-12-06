@@ -18,4 +18,5 @@ export const {
   getPower,
   getEnvironmentTemperature,
   getTargetTemperature,
+  setTargetTemperature,
 } = configure();

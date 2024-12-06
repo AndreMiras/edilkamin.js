@@ -169,12 +169,28 @@ const getTargetTemperature =
    *
    * @param {string} jwtToken - The JWT token for authentication.
    * @param {string} macAddress - The MAC address of the device.
-   * @returns {Promise<number>} - A promise that resolves to the target temperature.
+   * @returns {Promise<number>} - A promise that resolves to the target temperature (degree celsius).
    */
   async (jwtToken: string, macAddress: string): Promise<number> => {
     const info = await deviceInfo(axiosInstance)(jwtToken, macAddress);
     return info.nvm.user_parameters.enviroment_1_temperature;
   };
+
+const setTargetTemperature =
+  (axiosInstance: AxiosInstance) =>
+  /**
+   * Sends a command to set the target temperature (degree celsius) of a device.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number} temperature - The desired target temperature (degree celsius).
+   * @returns {Promise<string>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, temperature: number) =>
+    mqttCommand(axiosInstance)(jwtToken, macAddress, {
+      name: "enviroment_1_temperature",
+      value: temperature,
+    });
 
 /**
  * Configures the library for API interactions.
@@ -197,6 +213,7 @@ const configure = (baseURL: string = API_URL) => {
   const getEnvironmentTemperatureInstance =
     getEnvironmentTemperature(axiosInstance);
   const getTargetTemperatureInstance = getTargetTemperature(axiosInstance);
+  const setTargetTemperatureInstance = setTargetTemperature(axiosInstance);
   return {
     deviceInfo: deviceInfoInstance,
     setPower: setPowerInstance,
@@ -205,6 +222,7 @@ const configure = (baseURL: string = API_URL) => {
     getPower: getPowerInstance,
     getEnvironmentTemperature: getEnvironmentTemperatureInstance,
     getTargetTemperature: getTargetTemperatureInstance,
+    setTargetTemperature: setTargetTemperatureInstance,
   };
 };
 

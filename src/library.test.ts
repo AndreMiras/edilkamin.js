@@ -86,6 +86,7 @@ describe("library", () => {
       "getPower",
       "getEnvironmentTemperature",
       "getTargetTemperature",
+      "setTargetTemperature",
     ];
     it("should create API methods with the correct baseURL", () => {
       const baseURL = "https://example.com/api";
@@ -223,6 +224,52 @@ describe("library", () => {
           ],
         ]);
         assert.equal(result, expectedResult);
+      });
+    });
+    // Setter tests
+    const setterTests = [
+      {
+        method: "setTargetTemperature",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          value: number
+        ) => api.setTargetTemperature(token, mac, value),
+        payload: {
+          name: "enviroment_1_temperature",
+          value: 20,
+        },
+      },
+    ];
+    setterTests.forEach(({ method, call, payload }) => {
+      it(`should call axios and send the correct payload for ${method}`, async () => {
+        const mockAxios = {
+          put: sinon.stub().resolves({ status: 200 }),
+        };
+        axiosStub.returns(mockAxios);
+        const api = configure("https://example.com/api");
+
+        const result = await call(
+          api,
+          expectedToken,
+          "mockMacAddress",
+          payload.value
+        );
+
+        assert.deepEqual(mockAxios.put.args, [
+          [
+            "mqtt/command",
+            {
+              mac_address: "mockMacAddress",
+              ...payload,
+            },
+            {
+              headers: { Authorization: `Bearer ${expectedToken}` },
+            },
+          ],
+        ]);
+        assert.equal(result.status, 200);
       });
     });
   });
