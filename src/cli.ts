@@ -46,6 +46,28 @@ const addMacOption = (command: Command): Command =>
   command.requiredOption("-m, --mac <macAddress>", "MAC address of the device");
 
 /**
+ * Handles common authentication and API initialization logic.
+ * @param options The options passed from the CLI command.
+ * @returns An object containing the normalized MAC, JWT token, and configured API instance.
+ */
+const initializeCommand = async (options: {
+  username: string;
+  password?: string;
+  mac: string;
+}): Promise<{
+  normalizedMac: string;
+  jwtToken: string;
+  api: ReturnType<typeof configure>;
+}> => {
+  const { username, password, mac } = options;
+  const normalizedMac = mac.replace(/:/g, "");
+  const pwd = password || (await promptPassword());
+  const jwtToken = await signIn(username, pwd);
+  const api = configure();
+  return { normalizedMac, jwtToken, api };
+};
+
+/**
  * Executes a getter command by handling common steps (authentication, API initialization).
  * @param options The options passed from the CLI command.
  * @param getter A function to call on the configured API object.
@@ -58,11 +80,7 @@ const executeGetter = async (
     mac: string
   ) => Promise<unknown>
 ): Promise<void> => {
-  const { username, password, mac } = options;
-  const normalizedMac = mac.replace(/:/g, "");
-  const pwd = password || (await promptPassword());
-  const jwtToken = await signIn(username, pwd);
-  const api = configure();
+  const { normalizedMac, jwtToken, api } = await initializeCommand(options);
   const result = await getter(api, jwtToken, normalizedMac);
   console.log(result);
 };
@@ -81,12 +99,8 @@ const executeSetter = async (
     value: number
   ) => Promise<unknown>
 ): Promise<void> => {
-  const { username, password, mac, value } = options;
-  const normalizedMac = mac.replace(/:/g, "");
-  const pwd = password || (await promptPassword());
-  const jwtToken = await signIn(username, pwd);
-  const api = configure();
-  const result = await setter(api, jwtToken, normalizedMac, value);
+  const { normalizedMac, jwtToken, api } = await initializeCommand(options);
+  const result = await setter(api, jwtToken, normalizedMac, options.value);
   console.log(result);
 };
 
