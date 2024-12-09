@@ -8,6 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "prettier --check src docs .github *.md",
     "format": "prettier --write src docs .github *.md",
+    "dev": "tsc --watch",
     "build": "tsc"
   },
   "files": [
@@ -24,14 +25,16 @@
   },
   "homepage": "https://github.com/AndreMiras/edilkamin.js#readme",
   "dependencies": {
-    "@aws-amplify/core": "^4.3.14",
-    "aws-amplify": "^4.3.14",
-    "aws-crt": "^1.14.5"
+    "@aws-amplify/core": "~4.3.0",
+    "aws-amplify": "~4.3.0",
+    "aws-crt": "~1.24.0"
   },
   "devDependencies": {
-    "@aws-amplify/cli": "^7.6.21",
-    "prettier": "^2.5.1",
-    "ts-node": "^10.9.1",
-    "typedoc": "^0.22.12"
-  }
+    "@aws-amplify/cli": "~7.6.0",
+    "prettier": "~3.3.0",
+    "ts-node": "~10.9.0",
+    "typedoc": "~0.22.12",
+    "typescript": "~5.7.0"
+  },
+  "packageManager": "yarn@4.5.2"
 }
