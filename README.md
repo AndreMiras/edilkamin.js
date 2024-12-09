@@ -1,6 +1,8 @@
 # Edilkamin.js
 
 [![Tests](https://github.com/AndreMiras/edilkamin.js/workflows/Tests/badge.svg)](https://github.com/AndreMiras/edilkamin.js/actions/workflows/tests.yml)
+[![CLI Tests](https://github.com/AndreMiras/edilkamin.js/actions/workflows/cli-tests.yml/badge.svg)](https://github.com/AndreMiras/edilkamin.js/actions/workflows/cli-tests.yml)
+[![codecov](https://codecov.io/gh/AndreMiras/edilkamin.js/graph/badge.svg?token=YG3LKXNZWU)](https://app.codecov.io/gh/AndreMiras/edilkamin.js/tree/main)
 [![Documentation](https://github.com/AndreMiras/edilkamin.js/workflows/Documentation/badge.svg)](https://github.com/AndreMiras/edilkamin.js/actions/workflows/documentation.yml)
 [![npm version](https://badge.fury.io/js/edilkamin.svg)](https://badge.fury.io/js/edilkamin)
 
@@ -43,6 +45,20 @@ const baseUrl = "https://my-proxy.com/";
 const { deviceInfo, setPower } = configure(baseUrl);
 deviceInfo(token, macAddress).then(console.log);
 setPower(token, macAddress, 0).then(console.log);
+```
+
+## CLI
+
+The library includes a CLI tool that is useful for debugging.
+
+```sh
+yarn cli deviceInfo --mac $MAC --username $USERNAME --password $PASSWORD
+```
+
+Or with `npx` once the library is installed:
+
+```sh
+npx edilkamin deviceInfo --mac $MAC --username $USERNAME --password $PASSWORD
 ```
 
 ## Motivations

@@ -2,15 +2,17 @@ name: Documentation
 
 on:
   push:
-    branches:
-      - main
+  pull_request:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.x"
       - name: git config
         run: |
           git config user.name documentation-deploy-action
@@ -18,7 +20,7 @@ jobs:
           git remote set-url origin https://${{github.actor}}:${{github.token}}@github.com/${{github.repository}}.git
       - run: yarn install
       - run: yarn typedoc src/index.ts --out /tmp/docs
-      - name: deploy documentation
+      - name: commit documentation
         run: |
           git ls-remote --exit-code . origin/gh-pages \
             && git checkout -b gh-pages \
@@ -28,5 +30,8 @@ jobs:
           cp --recursive /tmp/docs/. .
           echo /node_modules > .gitignore
           git add --all
-          git commit --all --message ":memo: docs: Update generated documentation"
+          git commit --all --message ":memo: docs: Update generated documentation" || echo "No changes to commit"
+      - name: push documentation
+        if: github.ref_name == 'main'
+        run: |
           git push origin gh-pages

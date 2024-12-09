@@ -1,19 +1,26 @@
 {
   "name": "edilkamin",
-  "version": "1.1.0",
+  "version": "1.5.0",
   "description": "",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "prettier --check src docs .github *.md",
-    "format": "prettier --write src docs .github *.md",
+    "cli": "ts-node src/cli.ts",
+    "cli:debug": "node --inspect --require ts-node/register/transpile-only src/cli.ts",
+    "test": "nyc mocha --require ts-node/register src/*.test.ts",
+    "test:debug": "nyc mocha --require ts-node/register/transpile-only --inspect src/*.test.ts",
+    "lint:prettier": "prettier --check src docs .github *.json *.md *.mjs",
+    "format:prettier": "prettier --write src docs .github *.json *.md *.mjs",
+    "lint:eslint": "eslint src",
+    "format:eslint": "eslint --fix src",
+    "lint": "yarn lint:prettier && yarn lint:eslint",
+    "format": "yarn format:prettier && yarn format:eslint",
+    "build:cjs": "tsc -p tsconfig.cjs.json",
     "dev": "tsc --watch",
-    "build": "tsc"
+    "build:esm": "tsc -p tsconfig.esm.json",
+    "build": "npm run build:cjs && npm run build:esm"
   },
-  "files": [
-    "/dist"
-  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AndreMiras/edilkamin.js.git"
@@ -24,16 +31,42 @@
     "url": "https://github.com/AndreMiras/edilkamin.js/issues"
   },
   "homepage": "https://github.com/AndreMiras/edilkamin.js#readme",
+  "bin": {
+    "edilkamin": "dist/cjs/cli.js"
+  },
+  "nyc": {
+    "reporter": [
+      "html",
+      "lcov",
+      "text"
+    ]
+  },
   "dependencies": {
-    "@aws-amplify/core": "~4.3.0",
-    "aws-amplify": "~4.3.0",
-    "aws-crt": "~1.24.0"
+    "aws-amplify": "^6.10.0",
+    "axios": "^0.26.0"
   },
   "devDependencies": {
     "@aws-amplify/cli": "~7.6.0",
+    "@eslint/eslintrc": "^3.2.0",
+    "@eslint/js": "^9.16.0",
+    "@types/mocha": "^10.0.10",
+    "@types/sinon": "^17.0.3",
+    "@typescript-eslint/eslint-plugin": "^8.17.0",
+    "@typescript-eslint/parser": "^8.17.0",
+    "eslint": "^9.16.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-simple-import-sort": "^12.1.1",
+    "mocha": "^10.8.2",
+    "nyc": "^17.1.0",
     "prettier": "~3.3.0",
+    "sinon": "^19.0.2",
     "ts-node": "~10.9.0",
-    "typedoc": "~0.22.12",
+    "typedoc": "~0.27.2",
+    "typescript": "^5.7.2"
+  },
+  "optionalDependencies": {
+    "commander": "^12.1.0",
     "typescript": "~5.7.0"
   },
   "packageManager": "yarn@4.5.2"

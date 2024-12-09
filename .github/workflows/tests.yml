@@ -1,14 +1,29 @@
 name: Tests
 
-on: [push]
+on:
+  push:
+  pull_request:
 
 jobs:
-  build:
+  tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
       - run: yarn install
       - run: yarn lint
       - run: yarn build
-      - run: npm publish --dry-run
+      - run: yarn test
+      - uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
