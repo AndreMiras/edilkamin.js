@@ -31,9 +31,7 @@
     "url": "https://github.com/AndreMiras/edilkamin.js/issues"
   },
   "homepage": "https://github.com/AndreMiras/edilkamin.js#readme",
-  "bin": {
-    "edilkamin": "dist/cjs/cli.js"
-  },
+  "bin": "dist/cjs/cli.js",
   "nyc": {
     "reporter": [
       "html",
@@ -42,31 +40,31 @@
     ]
   },
   "dependencies": {
-    "aws-amplify": "^6.10.0",
-    "axios": "^0.26.0"
+    "aws-amplify": "~6.10.0",
+    "axios": "~0.26.0"
   },
   "devDependencies": {
     "@aws-amplify/cli": "~7.6.0",
-    "@eslint/eslintrc": "^3.2.0",
-    "@eslint/js": "^9.16.0",
-    "@types/mocha": "^10.0.10",
-    "@types/sinon": "^17.0.3",
-    "@typescript-eslint/eslint-plugin": "^8.17.0",
-    "@typescript-eslint/parser": "^8.17.0",
-    "eslint": "^9.16.0",
-    "eslint-config-prettier": "^9.1.0",
-    "eslint-plugin-prettier": "^5.2.1",
-    "eslint-plugin-simple-import-sort": "^12.1.1",
-    "mocha": "^10.8.2",
-    "nyc": "^17.1.0",
+    "@eslint/eslintrc": "~3.2.0",
+    "@eslint/js": "~9.16.0",
+    "@types/mocha": "~10.0.0",
+    "@types/sinon": "~17.0.0",
+    "@typescript-eslint/eslint-plugin": "~8.17.0",
+    "@typescript-eslint/parser": "~8.17.0",
+    "eslint": "~9.16.0",
+    "eslint-config-prettier": "~9.1.0",
+    "eslint-plugin-prettier": "~5.2.0",
+    "eslint-plugin-simple-import-sort": "~12.1.0",
+    "mocha": "~10.8.0",
+    "nyc": "~17.1.0",
     "prettier": "~3.3.0",
-    "sinon": "^19.0.2",
+    "sinon": "~19.0.0",
     "ts-node": "~10.9.0",
-    "typedoc": "~0.27.2",
-    "typescript": "^5.7.2"
+    "typedoc": "~0.27.0",
+    "typescript": "~5.7.0"
   },
   "optionalDependencies": {
-    "commander": "^12.1.0",
+    "commander": "~12.1.0",
     "typescript": "~5.7.0"
   },
   "packageManager": "yarn@4.5.2"

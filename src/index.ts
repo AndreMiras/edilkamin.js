@@ -1,7 +1,7 @@
 import {configure} from './library';
 
 export {API_URL} from './constants';
-export { configure, signIn } from './library';
+export {configure, signIn} from './library';
 export {
     CommandsType,
     DeviceInfoType,
@@ -11,12 +11,12 @@ export {
 } from './types';
 
 export const {
-  deviceInfo,
-  setPower,
-  setPowerOff,
-  setPowerOn,
-  getPower,
-  getEnvironmentTemperature,
-  getTargetTemperature,
-  setTargetTemperature,
+    deviceInfo,
+    setPower,
+    setPowerOff,
+    setPowerOn,
+    getPower,
+    getEnvironmentTemperature,
+    getTargetTemperature,
+    setTargetTemperature,
 } = configure();
