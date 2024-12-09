@@ -31,7 +31,9 @@
     "url": "https://github.com/AndreMiras/edilkamin.js/issues"
   },
   "homepage": "https://github.com/AndreMiras/edilkamin.js#readme",
-  "bin": "dist/cjs/cli.js",
+  "bin": {
+    "edilkamin": "dist/cjs/cli.js"
+  },
   "nyc": {
     "reporter": [
       "html",
@@ -64,8 +66,7 @@
     "typescript": "~5.7.0"
   },
   "optionalDependencies": {
-    "commander": "~12.1.0",
-    "typescript": "~5.7.0"
+    "commander": "~12.1.0"
   },
   "packageManager": "yarn@4.5.2"
 }
