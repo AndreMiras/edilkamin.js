@@ -52,7 +52,8 @@ const createAuthService = (auth: typeof amplifyAuth) => {
     assert.ok(isSignedIn, "Sign-in failed");
     const { tokens } = await auth.fetchAuthSession();
     assert.ok(tokens, "No tokens found");
-    return tokens.accessToken.toString();
+    assert.ok(tokens.idToken, "No ID token found");
+    return tokens.idToken.toString();
   };
   return { signIn };
 };
