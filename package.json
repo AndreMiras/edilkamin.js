@@ -25,6 +25,9 @@
     "url": "git+https://github.com/AndreMiras/edilkamin.js.git"
   },
   "author": "Andre Miras",
+  "contributors": [
+    { "name": "Maxime Journaux", "email": "maxime.journaux@espridigital.fr" }
+  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/AndreMiras/edilkamin.js/issues"
