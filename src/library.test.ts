@@ -29,7 +29,7 @@ describe("library", () => {
       const signOut = sinon.stub();
       const fetchAuthSession = sinon.stub().resolves({
         tokens: {
-          accessToken: { toString: () => expectedToken },
+          idToken: { toString: () => expectedToken },
         },
       });
       const authStub = {
