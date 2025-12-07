@@ -1,6 +1,6 @@
 {
   "name": "edilkamin",
-  "version": "1.6.0",
+  "version": "1.5.0",
   "description": "",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
@@ -25,9 +25,6 @@
     "url": "git+https://github.com/AndreMiras/edilkamin.js.git"
   },
   "author": "Andre Miras",
-  "contributors": [
-    { "name": "Maxime Journaux", "email": "maxime.journaux@espridigital.fr" }
-  ],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/AndreMiras/edilkamin.js/issues"
@@ -61,7 +58,7 @@
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "mocha": "^10.8.2",
     "nyc": "^17.1.0",
-    "prettier": "^3.0.0",
+    "prettier": "^2.5.1",
     "sinon": "^19.0.2",
     "ts-node": "^10.9.1",
     "typedoc": "^0.27.2",
