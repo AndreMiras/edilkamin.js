@@ -55,7 +55,7 @@ const createAuthService = (auth: typeof amplifyAuth) => {
   const signIn = async (
     username: string,
     password: string,
-    legacy: boolean = false
+    legacy: boolean = false,
   ): Promise<string> => {
     configureAmplify();
     await auth.signOut(); // Ensure the user is signed out first
@@ -91,7 +91,7 @@ const deviceInfo =
       `device/${macAddress}/info`,
       {
         headers: headers(jwtToken),
-      }
+      },
     );
     // Process response to decompress any gzipped Buffer fields
     return processResponse(response.data) as DeviceInfoType;
@@ -104,7 +104,7 @@ const mqttCommand =
     axiosInstance.put(
       "mqtt/command",
       { mac_address: macAddress, ...payload },
-      { headers: headers(jwtToken) }
+      { headers: headers(jwtToken) },
     );
 
 const setPower =
@@ -228,7 +228,7 @@ const registerDevice =
     macAddress: string,
     serialNumber: string,
     deviceName: string = "",
-    deviceRoom: string = ""
+    deviceRoom: string = "",
   ): Promise<DeviceAssociationResponse> => {
     const body: DeviceAssociationBody = {
       macAddress: macAddress.replace(/:/g, ""),
@@ -239,7 +239,7 @@ const registerDevice =
     const response = await axiosInstance.post<DeviceAssociationResponse>(
       "device",
       body,
-      { headers: headers(jwtToken) }
+      { headers: headers(jwtToken) },
     );
     return response.data;
   };
@@ -259,7 +259,7 @@ const editDevice =
     jwtToken: string,
     macAddress: string,
     deviceName: string = "",
-    deviceRoom: string = ""
+    deviceRoom: string = "",
   ): Promise<DeviceAssociationResponse> => {
     const normalizedMac = macAddress.replace(/:/g, "");
     const body: EditDeviceAssociationBody = {
@@ -269,7 +269,7 @@ const editDevice =
     const response = await axiosInstance.put<DeviceAssociationResponse>(
       `device/${normalizedMac}`,
       body,
-      { headers: headers(jwtToken) }
+      { headers: headers(jwtToken) },
     );
     return response.data;
   };

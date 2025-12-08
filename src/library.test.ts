@@ -10,7 +10,7 @@ import { API_URL } from "./constants";
  * Helper to create a gzip-compressed Buffer object for testing.
  */
 const createGzippedBuffer = (
-  data: unknown
+  data: unknown,
 ): { type: "Buffer"; data: number[] } => {
   const json = JSON.stringify(data);
   const compressed = pako.gzip(json);
@@ -57,7 +57,7 @@ describe("library", () => {
       const authService = createAuthService(authStub as any);
       const token = await authService.signIn(
         expectedUsername,
-        expectedPassword
+        expectedPassword,
       );
       assert.deepEqual(authStub.signOut.args, [[]]);
       assert.deepEqual(signIn.args, [
@@ -87,7 +87,7 @@ describe("library", () => {
       const token = await authService.signIn(
         expectedUsername,
         expectedPassword,
-        true // legacy mode
+        true, // legacy mode
       );
       assert.equal(token, expectedToken);
     });
@@ -114,7 +114,7 @@ describe("library", () => {
         {
           name: "AssertionError",
           message: "Sign-in failed",
-        }
+        },
       );
     });
   });
@@ -278,7 +278,7 @@ describe("library", () => {
           api: ReturnType<typeof configure>,
           token: string,
           mac: string,
-          value: number
+          value: number,
         ) => api.setTargetTemperature(token, mac, value),
         payload: {
           name: "enviroment_1_temperature",
@@ -298,7 +298,7 @@ describe("library", () => {
           api,
           expectedToken,
           "mockMacAddress",
-          payload.value
+          payload.value,
         );
 
         assert.deepEqual(mockAxios.put.args, [
@@ -339,7 +339,7 @@ describe("library", () => {
         "AA:BB:CC:DD:EE:FF",
         "EDK123",
         "Test Stove",
-        "Living Room"
+        "Living Room",
       );
 
       assert.deepEqual(mockAxios.post.args, [
@@ -407,7 +407,7 @@ describe("library", () => {
         expectedToken,
         "AA:BB:CC:DD:EE:FF",
         "Updated Name",
-        "Basement"
+        "Basement",
       );
 
       assert.deepEqual(mockAxios.put.args, [
@@ -564,7 +564,7 @@ describe("library", () => {
 
       const result = await api.getEnvironmentTemperature(
         expectedToken,
-        "mockMacAddress"
+        "mockMacAddress",
       );
 
       assert.equal(result, 19);
@@ -589,7 +589,7 @@ describe("library", () => {
 
       const result = await api.getTargetTemperature(
         expectedToken,
-        "mockMacAddress"
+        "mockMacAddress",
       );
 
       assert.equal(result, 22);

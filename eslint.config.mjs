@@ -1,4 +1,6 @@
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
+import prettierConfig from "eslint-config-prettier";
+import prettierPlugin from "eslint-plugin-prettier";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
 import globals from "globals";
 import tsParser from "@typescript-eslint/parser";
@@ -19,7 +21,7 @@ const compat = new FlatCompat({
 export default [
   ...compat.extends(
     "eslint:recommended",
-    "plugin:@typescript-eslint/recommended"
+    "plugin:@typescript-eslint/recommended",
   ),
   {
     plugins: {
@@ -30,6 +32,15 @@ export default [
       // Sorting imports and exports
       "simple-import-sort/imports": "error",
       "simple-import-sort/exports": "error",
+    },
+  },
+  prettierConfig,
+  {
+    plugins: {
+      prettier: prettierPlugin,
+    },
+    rules: {
+      "prettier/prettier": "error",
     },
   },
 ];

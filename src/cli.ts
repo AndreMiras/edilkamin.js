@@ -93,8 +93,8 @@ const executeGetter = async (
   getter: (
     api: ReturnType<typeof configure>,
     jwtToken: string,
-    mac: string
-  ) => Promise<unknown>
+    mac: string,
+  ) => Promise<unknown>,
 ): Promise<void> => {
   const { normalizedMac, jwtToken, api } = await initializeCommand(options);
   const result = await getter(api, jwtToken, normalizedMac);
@@ -118,8 +118,8 @@ const executeSetter = async (
     api: ReturnType<typeof configure>,
     jwtToken: string,
     mac: string,
-    value: number
-  ) => Promise<unknown>
+    value: number,
+  ) => Promise<unknown>,
 ): Promise<void> => {
   const { normalizedMac, jwtToken, api } = await initializeCommand(options);
   const result = await setter(api, jwtToken, normalizedMac, options.value);
@@ -134,7 +134,7 @@ const createProgram = (): Command => {
     .version(version);
   // Command: signIn
   addAuthOptions(
-    program.command("signIn").description("Sign in and retrieve a JWT token")
+    program.command("signIn").description("Sign in and retrieve a JWT token"),
   ).action(async (options) => {
     const { username, password } = options;
     const pwd = password || (await promptPassword());
@@ -149,7 +149,7 @@ const createProgram = (): Command => {
       getter: (
         api: ReturnType<typeof configure>,
         jwtToken: string,
-        mac: string
+        mac: string,
       ) => api.deviceInfo(jwtToken, mac),
     },
     {
@@ -158,7 +158,7 @@ const createProgram = (): Command => {
       getter: (
         api: ReturnType<typeof configure>,
         jwtToken: string,
-        mac: string
+        mac: string,
       ) => api.getPower(jwtToken, mac),
     },
     {
@@ -167,7 +167,7 @@ const createProgram = (): Command => {
       getter: (
         api: ReturnType<typeof configure>,
         jwtToken: string,
-        mac: string
+        mac: string,
       ) => api.getEnvironmentTemperature(jwtToken, mac),
     },
     {
@@ -176,14 +176,14 @@ const createProgram = (): Command => {
       getter: (
         api: ReturnType<typeof configure>,
         jwtToken: string,
-        mac: string
+        mac: string,
       ) => api.getTargetTemperature(jwtToken, mac),
     },
   ].forEach(({ commandName, description, getter }) => {
     addLegacyOption(
       addMacOption(
-        addAuthOptions(program.command(commandName).description(description))
-      )
+        addAuthOptions(program.command(commandName).description(description)),
+      ),
     ).action((options) => executeGetter(options, getter));
   });
   // Generic setter commands
@@ -195,7 +195,7 @@ const createProgram = (): Command => {
         api: ReturnType<typeof configure>,
         jwtToken: string,
         mac: string,
-        value: number
+        value: number,
       ) => api.setPower(jwtToken, mac, value),
     },
     {
@@ -205,16 +205,16 @@ const createProgram = (): Command => {
         api: ReturnType<typeof configure>,
         jwtToken: string,
         mac: string,
-        value: number
+        value: number,
       ) => api.setTargetTemperature(jwtToken, mac, value),
     },
   ].forEach(({ commandName, description, setter }) => {
     addLegacyOption(
       addMacOption(
         addAuthOptions(
-          program.command(commandName).description(description)
-        ).requiredOption("-v, --value <number>", "Value to set", parseFloat)
-      )
+          program.command(commandName).description(description),
+        ).requiredOption("-v, --value <number>", "Value to set", parseFloat),
+      ),
     ).action((options) => executeSetter(options, setter));
   });
 
@@ -223,8 +223,8 @@ const createProgram = (): Command => {
     addAuthOptions(
       program
         .command("register")
-        .description("Register a device with your account")
-    )
+        .description("Register a device with your account"),
+    ),
   )
     .requiredOption("-m, --mac <macAddress>", "MAC address of the device")
     .requiredOption("-s, --serial <serialNumber>", "Device serial number")
@@ -250,7 +250,7 @@ const createProgram = (): Command => {
         normalizedMac,
         serial,
         name,
-        room
+        room,
       );
       console.log("Device registered successfully:");
       console.log(JSON.stringify(result, null, 2));
@@ -260,9 +260,11 @@ const createProgram = (): Command => {
   addLegacyOption(
     addMacOption(
       addAuthOptions(
-        program.command("editDevice").description("Update device name and room")
-      )
-    )
+        program
+          .command("editDevice")
+          .description("Update device name and room"),
+      ),
+    ),
   )
     .requiredOption("-n, --name <deviceName>", "Device name")
     .requiredOption("-r, --room <deviceRoom>", "Room name")

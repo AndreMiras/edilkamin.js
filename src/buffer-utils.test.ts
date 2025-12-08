@@ -8,7 +8,7 @@ import { decompressBuffer, isBuffer, processResponse } from "./buffer-utils";
  * Helper to create a gzip-compressed Buffer object for testing.
  */
 const createGzippedBuffer = (
-  data: unknown
+  data: unknown,
 ): { type: "Buffer"; data: number[] } => {
   const json = JSON.stringify(data);
   const compressed = pako.gzip(json);
