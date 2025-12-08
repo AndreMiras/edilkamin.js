@@ -61,6 +61,36 @@ Or with `npx` once the library is installed:
 npx edilkamin deviceInfo --mac $MAC --username $USERNAME --password $PASSWORD
 ```
 
+## API Versions
+
+This library supports both the new and legacy Edilkamin API endpoints.
+
+### CLI Usage
+
+```sh
+# New API (default)
+yarn cli deviceInfo --mac $MAC --username $USERNAME --password $PASSWORD
+
+# Legacy API
+yarn cli deviceInfo --mac $MAC --username $USERNAME --password $PASSWORD --legacy
+```
+
+### Library Usage
+
+```js
+import { configure, signIn, OLD_API_URL, NEW_API_URL } from "edilkamin";
+
+// New API (default)
+const token = await signIn(username, password);
+const api = configure();
+
+// Legacy API
+const legacyToken = await signIn(username, password, true);
+const legacyApi = configure(OLD_API_URL);
+```
+
+> **Note**: The legacy API uses AWS API Gateway and may be deprecated in the future.
+
 ## Motivations
 
 - providing an open source web alternative

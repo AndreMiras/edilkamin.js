@@ -39,12 +39,14 @@ const createAuthService = (auth: typeof amplifyAuth) => {
    * Signs in a user with the provided credentials.
    * @param {string} username - The username of the user.
    * @param {string} password - The password of the user.
+   * @param {boolean} [legacy=false] - If true, returns accessToken for legacy API.
    * @returns {Promise<string>} - The JWT token of the signed-in user.
    * @throws {Error} - If sign-in fails or no tokens are retrieved.
    */
   const signIn = async (
     username: string,
-    password: string
+    password: string,
+    legacy: boolean = false
   ): Promise<string> => {
     configureAmplify();
     await auth.signOut(); // Ensure the user is signed out first
@@ -52,6 +54,10 @@ const createAuthService = (auth: typeof amplifyAuth) => {
     assert.ok(isSignedIn, "Sign-in failed");
     const { tokens } = await auth.fetchAuthSession();
     assert.ok(tokens, "No tokens found");
+    if (legacy) {
+      assert.ok(tokens.accessToken, "No access token found");
+      return tokens.accessToken.toString();
+    }
     assert.ok(tokens.idToken, "No ID token found");
     return tokens.idToken.toString();
   };

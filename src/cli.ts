@@ -3,6 +3,7 @@ import { Command } from "commander";
 import readline from "readline";
 
 import { version } from "../package.json";
+import { NEW_API_URL, OLD_API_URL } from "./constants";
 import { configure, signIn } from "./library";
 
 const promptPassword = (): Promise<string> => {
@@ -46,6 +47,14 @@ const addMacOption = (command: Command): Command =>
   command.requiredOption("-m, --mac <macAddress>", "MAC address of the device");
 
 /**
+ * Adds legacy API option to a command.
+ * @param command The command to which the legacy option should be added.
+ * @returns The command with the legacy option added.
+ */
+const addLegacyOption = (command: Command): Command =>
+  command.option("--legacy", "Use legacy API endpoint (old AWS Gateway)");
+
+/**
  * Handles common authentication and API initialization logic.
  * @param options The options passed from the CLI command.
  * @returns An object containing the normalized MAC, JWT token, and configured API instance.
@@ -54,16 +63,18 @@ const initializeCommand = async (options: {
   username: string;
   password?: string;
   mac: string;
+  legacy?: boolean;
 }): Promise<{
   normalizedMac: string;
   jwtToken: string;
   api: ReturnType<typeof configure>;
 }> => {
-  const { username, password, mac } = options;
+  const { username, password, mac, legacy = false } = options;
   const normalizedMac = mac.replace(/:/g, "");
   const pwd = password || (await promptPassword());
-  const jwtToken = await signIn(username, pwd);
-  const api = configure();
+  const jwtToken = await signIn(username, pwd, legacy);
+  const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
+  const api = configure(apiUrl);
   return { normalizedMac, jwtToken, api };
 };
 
@@ -73,7 +84,12 @@ const initializeCommand = async (options: {
  * @param getter A function to call on the configured API object.
  */
 const executeGetter = async (
-  options: { username: string; password?: string; mac: string },
+  options: {
+    username: string;
+    password?: string;
+    mac: string;
+    legacy?: boolean;
+  },
   getter: (
     api: ReturnType<typeof configure>,
     jwtToken: string,
@@ -91,7 +107,13 @@ const executeGetter = async (
  * @param setter A function to call on the configured API object.
  */
 const executeSetter = async (
-  options: { username: string; password?: string; mac: string; value: number },
+  options: {
+    username: string;
+    password?: string;
+    mac: string;
+    value: number;
+    legacy?: boolean;
+  },
   setter: (
     api: ReturnType<typeof configure>,
     jwtToken: string,
@@ -158,8 +180,10 @@ const createProgram = (): Command => {
       ) => api.getTargetTemperature(jwtToken, mac),
     },
   ].forEach(({ commandName, description, getter }) => {
-    addMacOption(
-      addAuthOptions(program.command(commandName).description(description))
+    addLegacyOption(
+      addMacOption(
+        addAuthOptions(program.command(commandName).description(description))
+      )
     ).action((options) => executeGetter(options, getter));
   });
   // Generic setter commands
@@ -185,10 +209,12 @@ const createProgram = (): Command => {
       ) => api.setTargetTemperature(jwtToken, mac, value),
     },
   ].forEach(({ commandName, description, setter }) => {
-    addMacOption(
-      addAuthOptions(
-        program.command(commandName).description(description)
-      ).requiredOption("-v, --value <number>", "Value to set", parseFloat)
+    addLegacyOption(
+      addMacOption(
+        addAuthOptions(
+          program.command(commandName).description(description)
+        ).requiredOption("-v, --value <number>", "Value to set", parseFloat)
+      )
     ).action((options) => executeSetter(options, setter));
   });
 

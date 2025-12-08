@@ -22,7 +22,7 @@ describe("library", () => {
   });
 
   describe("signIn", () => {
-    it("should sign in and return the JWT token", async () => {
+    it("should sign in and return the ID token by default", async () => {
       const expectedUsername = "testuser";
       const expectedPassword = "testpassword";
       const signIn = sinon.stub().resolves({ isSignedIn: true });
@@ -30,6 +30,7 @@ describe("library", () => {
       const fetchAuthSession = sinon.stub().resolves({
         tokens: {
           idToken: { toString: () => expectedToken },
+          accessToken: { toString: () => "accessToken" },
         },
       });
       const authStub = {
@@ -47,6 +48,32 @@ describe("library", () => {
       assert.deepEqual(signIn.args, [
         [{ username: expectedUsername, password: expectedPassword }],
       ]);
+      assert.equal(token, expectedToken);
+    });
+
+    it("should sign in and return the access token in legacy mode", async () => {
+      const expectedUsername = "testuser";
+      const expectedPassword = "testpassword";
+      const signIn = sinon.stub().resolves({ isSignedIn: true });
+      const signOut = sinon.stub();
+      const fetchAuthSession = sinon.stub().resolves({
+        tokens: {
+          accessToken: { toString: () => expectedToken },
+          idToken: { toString: () => "idToken" },
+        },
+      });
+      const authStub = {
+        signIn,
+        signOut,
+        fetchAuthSession,
+      };
+      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
+      const authService = createAuthService(authStub as any);
+      const token = await authService.signIn(
+        expectedUsername,
+        expectedPassword,
+        true // legacy mode
+      );
       assert.equal(token, expectedToken);
     });
 
