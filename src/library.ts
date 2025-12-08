@@ -3,8 +3,9 @@ import { Amplify } from "aws-amplify";
 import * as amplifyAuth from "aws-amplify/auth";
 import axios, { AxiosInstance } from "axios";
 
+import { processResponse } from "./buffer-utils";
 import { API_URL } from "./constants";
-import { DeviceInfoType } from "./types";
+import { DeviceInfoRawType, DeviceInfoType } from "./types";
 
 const amplifyconfiguration = {
   aws_project_region: "eu-central-1",
@@ -71,19 +72,21 @@ const deviceInfo =
   (axiosInstance: AxiosInstance) =>
   /**
    * Retrieves information about a device by its MAC address.
+   * Automatically decompresses any gzip-compressed Buffer fields in the response.
    *
    * @param {string} jwtToken - The JWT token for authentication.
    * @param {string} macAddress - The MAC address of the device.
    * @returns {Promise<DeviceInfoType>} - A promise that resolves to the device info.
    */
-  async (jwtToken: string, macAddress: string) => {
-    const response = await axiosInstance.get<DeviceInfoType>(
+  async (jwtToken: string, macAddress: string): Promise<DeviceInfoType> => {
+    const response = await axiosInstance.get<DeviceInfoRawType>(
       `device/${macAddress}/info`,
       {
         headers: headers(jwtToken),
       }
     );
-    return response.data;
+    // Process response to decompress any gzipped Buffer fields
+    return processResponse(response.data) as DeviceInfoType;
   };
 
 const mqttCommand =

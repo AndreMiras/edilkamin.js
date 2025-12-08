@@ -1,9 +1,24 @@
 import { strict as assert } from "assert";
 import axios from "axios";
+import pako from "pako";
 import sinon from "sinon";
 
 import { configure, createAuthService } from "../src/library";
 import { API_URL } from "./constants";
+
+/**
+ * Helper to create a gzip-compressed Buffer object for testing.
+ */
+const createGzippedBuffer = (
+  data: unknown
+): { type: "Buffer"; data: number[] } => {
+  const json = JSON.stringify(data);
+  const compressed = pako.gzip(json);
+  return {
+    type: "Buffer",
+    data: Array.from(compressed),
+  };
+};
 
 describe("library", () => {
   let axiosStub: sinon.SinonStub;
@@ -298,6 +313,163 @@ describe("library", () => {
         ]);
         assert.equal(result.status, 200);
       });
+    });
+  });
+
+  describe("deviceInfo with compressed responses", () => {
+    it("should decompress Buffer-encoded status field", async () => {
+      const statusData = {
+        commands: { power: true },
+        temperatures: { enviroment: 19, board: 25 },
+      };
+      const mockResponse = {
+        status: createGzippedBuffer(statusData),
+        nvm: {
+          user_parameters: {
+            enviroment_1_temperature: 22,
+          },
+        },
+      };
+
+      const mockAxios = {
+        get: sinon.stub().resolves({ data: mockResponse }),
+      };
+      axiosStub.returns(mockAxios);
+      const api = configure("https://example.com/api");
+
+      const result = await api.deviceInfo(expectedToken, "mockMacAddress");
+
+      assert.deepEqual(result.status, statusData);
+    });
+
+    it("should decompress Buffer-encoded nvm field", async () => {
+      const nvmData = {
+        user_parameters: {
+          enviroment_1_temperature: 22,
+          enviroment_2_temperature: 0,
+          enviroment_3_temperature: 0,
+          is_auto: false,
+          is_sound_active: true,
+        },
+      };
+      const mockResponse = {
+        status: {
+          commands: { power: true },
+          temperatures: { enviroment: 19 },
+        },
+        nvm: createGzippedBuffer(nvmData),
+      };
+
+      const mockAxios = {
+        get: sinon.stub().resolves({ data: mockResponse }),
+      };
+      axiosStub.returns(mockAxios);
+      const api = configure("https://example.com/api");
+
+      const result = await api.deviceInfo(expectedToken, "mockMacAddress");
+
+      assert.deepEqual(result.nvm, nvmData);
+    });
+
+    it("should handle fully compressed response (status and nvm)", async () => {
+      const statusData = {
+        commands: { power: false },
+        temperatures: { enviroment: 21, board: 30 },
+      };
+      const nvmData = {
+        user_parameters: {
+          enviroment_1_temperature: 20,
+          enviroment_2_temperature: 0,
+          enviroment_3_temperature: 0,
+          is_auto: true,
+          is_sound_active: false,
+        },
+      };
+      const mockResponse = {
+        status: createGzippedBuffer(statusData),
+        nvm: createGzippedBuffer(nvmData),
+      };
+
+      const mockAxios = {
+        get: sinon.stub().resolves({ data: mockResponse }),
+      };
+      axiosStub.returns(mockAxios);
+      const api = configure("https://example.com/api");
+
+      const result = await api.deviceInfo(expectedToken, "mockMacAddress");
+
+      assert.deepEqual(result.status, statusData);
+      assert.deepEqual(result.nvm, nvmData);
+    });
+
+    it("should work with getPower on compressed response", async () => {
+      const statusData = {
+        commands: { power: true },
+        temperatures: { enviroment: 19 },
+      };
+      const mockResponse = {
+        status: createGzippedBuffer(statusData),
+        nvm: { user_parameters: { enviroment_1_temperature: 22 } },
+      };
+
+      const mockAxios = {
+        get: sinon.stub().resolves({ data: mockResponse }),
+      };
+      axiosStub.returns(mockAxios);
+      const api = configure("https://example.com/api");
+
+      const result = await api.getPower(expectedToken, "mockMacAddress");
+
+      assert.equal(result, true);
+    });
+
+    it("should work with getEnvironmentTemperature on compressed response", async () => {
+      const statusData = {
+        commands: { power: true },
+        temperatures: { enviroment: 19, board: 25 },
+      };
+      const mockResponse = {
+        status: createGzippedBuffer(statusData),
+        nvm: { user_parameters: { enviroment_1_temperature: 22 } },
+      };
+
+      const mockAxios = {
+        get: sinon.stub().resolves({ data: mockResponse }),
+      };
+      axiosStub.returns(mockAxios);
+      const api = configure("https://example.com/api");
+
+      const result = await api.getEnvironmentTemperature(
+        expectedToken,
+        "mockMacAddress"
+      );
+
+      assert.equal(result, 19);
+    });
+
+    it("should work with getTargetTemperature on compressed response", async () => {
+      const nvmData = {
+        user_parameters: {
+          enviroment_1_temperature: 22,
+        },
+      };
+      const mockResponse = {
+        status: { commands: { power: true }, temperatures: { enviroment: 19 } },
+        nvm: createGzippedBuffer(nvmData),
+      };
+
+      const mockAxios = {
+        get: sinon.stub().resolves({ data: mockResponse }),
+      };
+      axiosStub.returns(mockAxios);
+      const api = configure("https://example.com/api");
+
+      const result = await api.getTargetTemperature(
+        expectedToken,
+        "mockMacAddress"
+      );
+
+      assert.equal(result, 22);
     });
   });
 });

@@ -42,13 +42,15 @@
   },
   "dependencies": {
     "aws-amplify": "^6.10.0",
-    "axios": "^1.13.2"
+    "axios": "^1.13.2",
+    "pako": "^2.1.0"
   },
   "devDependencies": {
     "@aws-amplify/cli": "^7.6.21",
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.16.0",
     "@types/mocha": "^10.0.10",
+    "@types/pako": "^2.0.4",
     "@types/sinon": "^17.0.3",
     "@typescript-eslint/eslint-plugin": "^8.17.0",
     "@typescript-eslint/parser": "^8.17.0",
