@@ -218,6 +218,66 @@ const createProgram = (): Command => {
     ).action((options) => executeSetter(options, setter));
   });
 
+  // Command: register
+  addLegacyOption(
+    addAuthOptions(
+      program
+        .command("register")
+        .description("Register a device with your account")
+    )
+  )
+    .requiredOption("-m, --mac <macAddress>", "MAC address of the device")
+    .requiredOption("-s, --serial <serialNumber>", "Device serial number")
+    .requiredOption("-n, --name <deviceName>", "Device name")
+    .requiredOption("-r, --room <deviceRoom>", "Room name")
+    .action(async (options) => {
+      const {
+        username,
+        password,
+        mac,
+        serial,
+        name,
+        room,
+        legacy = false,
+      } = options;
+      const normalizedMac = mac.replace(/:/g, "");
+      const pwd = password || (await promptPassword());
+      const jwtToken = await signIn(username, pwd, legacy);
+      const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
+      const api = configure(apiUrl);
+      const result = await api.registerDevice(
+        jwtToken,
+        normalizedMac,
+        serial,
+        name,
+        room
+      );
+      console.log("Device registered successfully:");
+      console.log(JSON.stringify(result, null, 2));
+    });
+
+  // Command: editDevice
+  addLegacyOption(
+    addMacOption(
+      addAuthOptions(
+        program.command("editDevice").description("Update device name and room")
+      )
+    )
+  )
+    .requiredOption("-n, --name <deviceName>", "Device name")
+    .requiredOption("-r, --room <deviceRoom>", "Room name")
+    .action(async (options) => {
+      const { username, password, mac, name, room, legacy = false } = options;
+      const normalizedMac = mac.replace(/:/g, "");
+      const pwd = password || (await promptPassword());
+      const jwtToken = await signIn(username, pwd, legacy);
+      const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
+      const api = configure(apiUrl);
+      const result = await api.editDevice(jwtToken, normalizedMac, name, room);
+      console.log("Device updated successfully:");
+      console.log(JSON.stringify(result, null, 2));
+    });
+
   return program;
 };
 

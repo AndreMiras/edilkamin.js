@@ -50,11 +50,46 @@ interface DeviceInfoRawType {
   component_info?: BufferEncodedType | Record<string, unknown>;
 }
 
+/**
+ * Request body for registering a device with a user account.
+ * All fields are required by the API.
+ */
+interface DeviceAssociationBody {
+  macAddress: string;
+  deviceName: string;
+  deviceRoom: string;
+  serialNumber: string;
+}
+
+/**
+ * Request body for editing a device's name and room.
+ * MAC address is specified in the URL path, not the body.
+ * Serial number cannot be changed after registration.
+ */
+interface EditDeviceAssociationBody {
+  deviceName: string;
+  deviceRoom: string;
+}
+
+/**
+ * Response from device registration endpoint.
+ * Structure based on Android app behavior - may need adjustment after testing.
+ */
+interface DeviceAssociationResponse {
+  macAddress: string;
+  deviceName: string;
+  deviceRoom: string;
+  serialNumber: string;
+}
+
 export type {
   BufferEncodedType,
   CommandsType,
+  DeviceAssociationBody,
+  DeviceAssociationResponse,
   DeviceInfoRawType,
   DeviceInfoType,
+  EditDeviceAssociationBody,
   StatusType,
   TemperaturesType,
   UserParametersType,

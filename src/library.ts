@@ -5,7 +5,13 @@ import axios, { AxiosInstance } from "axios";
 
 import { processResponse } from "./buffer-utils";
 import { API_URL } from "./constants";
-import { DeviceInfoRawType, DeviceInfoType } from "./types";
+import {
+  DeviceAssociationBody,
+  DeviceAssociationResponse,
+  DeviceInfoRawType,
+  DeviceInfoType,
+  EditDeviceAssociationBody,
+} from "./types";
 
 const amplifyconfiguration = {
   aws_project_region: "eu-central-1",
@@ -204,6 +210,70 @@ const setTargetTemperature =
       value: temperature,
     });
 
+const registerDevice =
+  (axiosInstance: AxiosInstance) =>
+  /**
+   * Registers a device with the user's account.
+   * This must be called before other device operations will work on the new API.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device (colons optional).
+   * @param {string} serialNumber - The device serial number.
+   * @param {string} deviceName - User-friendly name for the device (default: empty string).
+   * @param {string} deviceRoom - Room name for the device (default: empty string).
+   * @returns {Promise<DeviceAssociationResponse>} - A promise that resolves to the registration response.
+   */
+  async (
+    jwtToken: string,
+    macAddress: string,
+    serialNumber: string,
+    deviceName: string = "",
+    deviceRoom: string = ""
+  ): Promise<DeviceAssociationResponse> => {
+    const body: DeviceAssociationBody = {
+      macAddress: macAddress.replace(/:/g, ""),
+      deviceName,
+      deviceRoom,
+      serialNumber,
+    };
+    const response = await axiosInstance.post<DeviceAssociationResponse>(
+      "device",
+      body,
+      { headers: headers(jwtToken) }
+    );
+    return response.data;
+  };
+
+const editDevice =
+  (axiosInstance: AxiosInstance) =>
+  /**
+   * Updates a device's name and room.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device (colons optional).
+   * @param {string} deviceName - New name for the device (default: empty string).
+   * @param {string} deviceRoom - New room for the device (default: empty string).
+   * @returns {Promise<DeviceAssociationResponse>} - A promise that resolves to the update response.
+   */
+  async (
+    jwtToken: string,
+    macAddress: string,
+    deviceName: string = "",
+    deviceRoom: string = ""
+  ): Promise<DeviceAssociationResponse> => {
+    const normalizedMac = macAddress.replace(/:/g, "");
+    const body: EditDeviceAssociationBody = {
+      deviceName,
+      deviceRoom,
+    };
+    const response = await axiosInstance.put<DeviceAssociationResponse>(
+      `device/${normalizedMac}`,
+      body,
+      { headers: headers(jwtToken) }
+    );
+    return response.data;
+  };
+
 /**
  * Configures the library for API interactions.
  * Initializes API methods with a specified base URL.
@@ -218,6 +288,8 @@ const setTargetTemperature =
 const configure = (baseURL: string = API_URL) => {
   const axiosInstance = axios.create({ baseURL });
   const deviceInfoInstance = deviceInfo(axiosInstance);
+  const registerDeviceInstance = registerDevice(axiosInstance);
+  const editDeviceInstance = editDevice(axiosInstance);
   const setPowerInstance = setPower(axiosInstance);
   const setPowerOffInstance = setPowerOff(axiosInstance);
   const setPowerOnInstance = setPowerOn(axiosInstance);
@@ -228,6 +300,8 @@ const configure = (baseURL: string = API_URL) => {
   const setTargetTemperatureInstance = setTargetTemperature(axiosInstance);
   return {
     deviceInfo: deviceInfoInstance,
+    registerDevice: registerDeviceInstance,
+    editDevice: editDeviceInstance,
     setPower: setPowerInstance,
     setPowerOff: setPowerOffInstance,
     setPowerOn: setPowerOnInstance,

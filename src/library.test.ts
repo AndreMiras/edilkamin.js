@@ -122,6 +122,8 @@ describe("library", () => {
   describe("configure", () => {
     const expectedApi = [
       "deviceInfo",
+      "registerDevice",
+      "editDevice",
       "setPower",
       "setPowerOff",
       "setPowerOn",
@@ -313,6 +315,127 @@ describe("library", () => {
         ]);
         assert.equal(result.status, 200);
       });
+    });
+  });
+
+  describe("registerDevice", () => {
+    it("should call POST /device with correct payload", async () => {
+      const mockResponse = {
+        macAddress: "AABBCCDDEEFF",
+        deviceName: "Test Stove",
+        deviceRoom: "Living Room",
+        serialNumber: "EDK123",
+      };
+      const mockAxios = {
+        post: sinon.stub().resolves({ data: mockResponse }),
+        get: sinon.stub(),
+        put: sinon.stub(),
+      };
+      axiosStub.returns(mockAxios);
+      const api = configure("https://example.com/api");
+
+      const result = await api.registerDevice(
+        expectedToken,
+        "AA:BB:CC:DD:EE:FF",
+        "EDK123",
+        "Test Stove",
+        "Living Room"
+      );
+
+      assert.deepEqual(mockAxios.post.args, [
+        [
+          "device",
+          {
+            macAddress: "AABBCCDDEEFF",
+            deviceName: "Test Stove",
+            deviceRoom: "Living Room",
+            serialNumber: "EDK123",
+          },
+          { headers: { Authorization: `Bearer ${expectedToken}` } },
+        ],
+      ]);
+      assert.deepEqual(result, mockResponse);
+    });
+
+    it("should normalize MAC address by removing colons", async () => {
+      const mockAxios = {
+        post: sinon.stub().resolves({ data: {} }),
+        get: sinon.stub(),
+        put: sinon.stub(),
+      };
+      axiosStub.returns(mockAxios);
+      const api = configure("https://example.com/api");
+
+      await api.registerDevice(expectedToken, "AA:BB:CC:DD:EE:FF", "EDK123");
+
+      assert.equal(mockAxios.post.args[0][1].macAddress, "AABBCCDDEEFF");
+    });
+
+    it("should use empty strings as defaults for name and room", async () => {
+      const mockAxios = {
+        post: sinon.stub().resolves({ data: {} }),
+        get: sinon.stub(),
+        put: sinon.stub(),
+      };
+      axiosStub.returns(mockAxios);
+      const api = configure("https://example.com/api");
+
+      await api.registerDevice(expectedToken, "AABBCCDDEEFF", "EDK123");
+
+      assert.equal(mockAxios.post.args[0][1].deviceName, "");
+      assert.equal(mockAxios.post.args[0][1].deviceRoom, "");
+    });
+  });
+
+  describe("editDevice", () => {
+    it("should call PUT /device/{mac} with correct payload", async () => {
+      const mockResponse = {
+        macAddress: "AABBCCDDEEFF",
+        deviceName: "Updated Name",
+        deviceRoom: "Basement",
+        serialNumber: "EDK123",
+      };
+      const mockAxios = {
+        put: sinon.stub().resolves({ data: mockResponse }),
+        get: sinon.stub(),
+        post: sinon.stub(),
+      };
+      axiosStub.returns(mockAxios);
+      const api = configure("https://example.com/api");
+
+      const result = await api.editDevice(
+        expectedToken,
+        "AA:BB:CC:DD:EE:FF",
+        "Updated Name",
+        "Basement"
+      );
+
+      assert.deepEqual(mockAxios.put.args, [
+        [
+          "device/AABBCCDDEEFF",
+          {
+            deviceName: "Updated Name",
+            deviceRoom: "Basement",
+          },
+          { headers: { Authorization: `Bearer ${expectedToken}` } },
+        ],
+      ]);
+      assert.deepEqual(result, mockResponse);
+    });
+
+    it("should use empty strings as defaults for name and room", async () => {
+      const mockAxios = {
+        put: sinon.stub().resolves({ data: {} }),
+        get: sinon.stub(),
+        post: sinon.stub(),
+      };
+      axiosStub.returns(mockAxios);
+      const api = configure("https://example.com/api");
+
+      await api.editDevice(expectedToken, "AABBCCDDEEFF");
+
+      assert.equal(mockAxios.put.args[0][1].deviceName, "");
+      assert.equal(mockAxios.put.args[0][1].deviceRoom, "");
     });
   });
 
