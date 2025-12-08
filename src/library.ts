@@ -20,14 +20,16 @@ const amplifyconfiguration = {
  */
 const headers = (jwtToken: string) => ({ Authorization: `Bearer ${jwtToken}` });
 
+let amplifyConfigured = false;
+
 /**
  * Configures Amplify if not already configured.
- * Ensures the configuration is only applied once.
+ * Uses a local flag to avoid calling getConfig() which prints a warning.
  */
 const configureAmplify = () => {
-  const currentConfig = Amplify.getConfig();
-  if (Object.keys(currentConfig).length !== 0) return;
+  if (amplifyConfigured) return;
   Amplify.configure(amplifyconfiguration);
+  amplifyConfigured = true;
 };
 
 /**
