@@ -4,7 +4,8 @@ import readline from "readline";
 
 import { version } from "../package.json";
 import { NEW_API_URL, OLD_API_URL } from "./constants";
-import { configure, signIn } from "./library";
+import { configure, configureAmplify, getSession, signIn } from "./library";
+import { clearSession, createFileStorage } from "./token-storage";
 
 const promptPassword = (): Promise<string> => {
   const rl = readline.createInterface({
@@ -30,12 +31,16 @@ const promptPassword = (): Promise<string> => {
 
 /**
  * Adds common options (username and password) to a command.
+ * Username is optional if a session already exists.
  * @param command The command to which options should be added.
  * @returns The command with options added.
  */
 const addAuthOptions = (command: Command): Command =>
   command
-    .requiredOption("-u, --username <username>", "Username")
+    .option(
+      "-u, --username <username>",
+      "Username (optional if session exists)",
+    )
     .option("-p, --password <password>", "Password");
 
 /**
@@ -56,11 +61,12 @@ const addLegacyOption = (command: Command): Command =>
 
 /**
  * Handles common authentication and API initialization logic.
+ * Tries to use existing session first, falls back to sign-in if needed.
  * @param options The options passed from the CLI command.
  * @returns An object containing the normalized MAC, JWT token, and configured API instance.
  */
 const initializeCommand = async (options: {
-  username: string;
+  username?: string;
   password?: string;
   mac: string;
   legacy?: boolean;
@@ -71,8 +77,26 @@ const initializeCommand = async (options: {
 }> => {
   const { username, password, mac, legacy = false } = options;
   const normalizedMac = mac.replace(/:/g, "");
-  const pwd = password || (await promptPassword());
-  const jwtToken = await signIn(username, pwd, legacy);
+
+  // Initialize file storage for session persistence
+  const storage = createFileStorage();
+  configureAmplify(storage);
+
+  let jwtToken: string;
+  try {
+    // Try to get existing session first
+    jwtToken = await getSession(false, legacy);
+  } catch {
+    // No session, need to sign in
+    if (!username) {
+      throw new Error(
+        "No session found. Please provide --username to sign in.",
+      );
+    }
+    const pwd = password || (await promptPassword());
+    jwtToken = await signIn(username, pwd, legacy);
+  }
+
   const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
   const api = configure(apiUrl);
   return { normalizedMac, jwtToken, api };
@@ -85,7 +109,7 @@ const initializeCommand = async (options: {
  */
 const executeGetter = async (
   options: {
-    username: string;
+    username?: string;
     password?: string;
     mac: string;
     legacy?: boolean;
@@ -108,7 +132,7 @@ const executeGetter = async (
  */
 const executeSetter = async (
   options: {
-    username: string;
+    username?: string;
     password?: string;
     mac: string;
     value: number;
@@ -133,14 +157,29 @@ const createProgram = (): Command => {
     .description("CLI tool for interacting with the Edilkamin API")
     .version(version);
   // Command: signIn
-  addAuthOptions(
-    program.command("signIn").description("Sign in and retrieve a JWT token"),
-  ).action(async (options) => {
-    const { username, password } = options;
-    const pwd = password || (await promptPassword());
-    const jwtToken = await signIn(username, pwd);
-    console.log("JWT Token:", jwtToken);
-  });
+  program
+    .command("signIn")
+    .description("Sign in and retrieve a JWT token")
+    .requiredOption("-u, --username <username>", "Username")
+    .option("-p, --password <password>", "Password")
+    .action(async (options) => {
+      const { username, password } = options;
+      // Initialize file storage for session persistence
+      const storage = createFileStorage();
+      configureAmplify(storage);
+      const pwd = password || (await promptPassword());
+      const jwtToken = await signIn(username, pwd);
+      console.log("JWT Token:", jwtToken);
+    });
+
+  // Command: logout
+  program
+    .command("logout")
+    .description("Clear stored session")
+    .action(async () => {
+      await clearSession();
+      console.log("Session cleared successfully");
+    });
   // Generic getter commands
   [
     {
@@ -241,8 +280,24 @@ const createProgram = (): Command => {
         legacy = false,
       } = options;
       const normalizedMac = mac.replace(/:/g, "");
-      const pwd = password || (await promptPassword());
-      const jwtToken = await signIn(username, pwd, legacy);
+
+      // Initialize file storage for session persistence
+      const storage = createFileStorage();
+      configureAmplify(storage);
+
+      let jwtToken: string;
+      try {
+        jwtToken = await getSession(false, legacy);
+      } catch {
+        if (!username) {
+          throw new Error(
+            "No session found. Please provide --username to sign in.",
+          );
+        }
+        const pwd = password || (await promptPassword());
+        jwtToken = await signIn(username, pwd, legacy);
+      }
+
       const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
       const api = configure(apiUrl);
       const result = await api.registerDevice(
@@ -271,8 +326,24 @@ const createProgram = (): Command => {
     .action(async (options) => {
       const { username, password, mac, name, room, legacy = false } = options;
       const normalizedMac = mac.replace(/:/g, "");
-      const pwd = password || (await promptPassword());
-      const jwtToken = await signIn(username, pwd, legacy);
+
+      // Initialize file storage for session persistence
+      const storage = createFileStorage();
+      configureAmplify(storage);
+
+      let jwtToken: string;
+      try {
+        jwtToken = await getSession(false, legacy);
+      } catch {
+        if (!username) {
+          throw new Error(
+            "No session found. Please provide --username to sign in.",
+          );
+        }
+        const pwd = password || (await promptPassword());
+        jwtToken = await signIn(username, pwd, legacy);
+      }
+
       const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
       const api = configure(apiUrl);
       const result = await api.editDevice(jwtToken, normalizedMac, name, room);
