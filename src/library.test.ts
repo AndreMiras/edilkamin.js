@@ -1,4 +1,5 @@
 import { strict as assert } from "assert";
+import * as amplifyAuth from "aws-amplify/auth";
 import axios from "axios";
 import pako from "pako";
 import sinon from "sinon";
@@ -116,6 +117,80 @@ describe("library", () => {
           message: "Sign-in failed",
         },
       );
+    });
+  });
+
+  describe("getSession", () => {
+    it("should return idToken by default", async () => {
+      const mockAuth = {
+        signIn: sinon.stub().resolves({ isSignedIn: true }),
+        signOut: sinon.stub().resolves(),
+        fetchAuthSession: sinon.stub().resolves({
+          tokens: {
+            idToken: { toString: () => "mock-id-token" },
+            accessToken: { toString: () => "mock-access-token" },
+          },
+        }),
+      };
+      const { getSession, signIn } = createAuthService(
+        mockAuth as unknown as typeof amplifyAuth,
+      );
+      await signIn("user", "pass");
+      const token = await getSession();
+      assert.equal(token, "mock-id-token");
+    });
+
+    it("should return accessToken when legacy=true", async () => {
+      const mockAuth = {
+        signIn: sinon.stub().resolves({ isSignedIn: true }),
+        signOut: sinon.stub().resolves(),
+        fetchAuthSession: sinon.stub().resolves({
+          tokens: {
+            idToken: { toString: () => "mock-id-token" },
+            accessToken: { toString: () => "mock-access-token" },
+          },
+        }),
+      };
+      const { getSession, signIn } = createAuthService(
+        mockAuth as unknown as typeof amplifyAuth,
+      );
+      await signIn("user", "pass");
+      const token = await getSession(false, true);
+      assert.equal(token, "mock-access-token");
+    });
+
+    it("should throw error when no session exists", async () => {
+      const mockAuth = {
+        signIn: sinon.stub().resolves({ isSignedIn: true }),
+        signOut: sinon.stub().resolves(),
+        fetchAuthSession: sinon.stub().resolves({ tokens: null }),
+      };
+      const { getSession } = createAuthService(
+        mockAuth as unknown as typeof amplifyAuth,
+      );
+      await assert.rejects(async () => getSession(), {
+        name: "AssertionError",
+        message: "No session found - please sign in first",
+      });
+    });
+
+    it("should pass forceRefresh to fetchAuthSession", async () => {
+      const mockAuth = {
+        signIn: sinon.stub().resolves({ isSignedIn: true }),
+        signOut: sinon.stub().resolves(),
+        fetchAuthSession: sinon.stub().resolves({
+          tokens: {
+            idToken: { toString: () => "mock-id-token" },
+            accessToken: { toString: () => "mock-access-token" },
+          },
+        }),
+      };
+      const { getSession, signIn } = createAuthService(
+        mockAuth as unknown as typeof amplifyAuth,
+      );
+      await signIn("user", "pass");
+      await getSession(true);
+      assert.ok(mockAuth.fetchAuthSession.calledWith({ forceRefresh: true }));
     });
   });
 

@@ -1,6 +1,7 @@
 import { strict as assert } from "assert";
 import { Amplify } from "aws-amplify";
 import * as amplifyAuth from "aws-amplify/auth";
+import { cognitoUserPoolsTokenProvider } from "aws-amplify/auth/cognito";
 import axios, { AxiosInstance } from "axios";
 
 import { processResponse } from "./buffer-utils";
@@ -31,10 +32,19 @@ let amplifyConfigured = false;
 /**
  * Configures Amplify if not already configured.
  * Uses a local flag to avoid calling getConfig() which prints a warning.
+ * @param {object} [storage] - Optional custom storage adapter for token persistence
  */
-const configureAmplify = () => {
+const configureAmplify = (storage?: {
+  setItem: (key: string, value: string) => Promise<void>;
+  getItem: (key: string) => Promise<string | null>;
+  removeItem: (key: string) => Promise<void>;
+  clear: () => Promise<void>;
+}) => {
   if (amplifyConfigured) return;
   Amplify.configure(amplifyconfiguration);
+  if (storage) {
+    cognitoUserPoolsTokenProvider.setKeyValueStorage(storage);
+  }
   amplifyConfigured = true;
 };
 
@@ -70,11 +80,35 @@ const createAuthService = (auth: typeof amplifyAuth) => {
     assert.ok(tokens.idToken, "No ID token found");
     return tokens.idToken.toString();
   };
-  return { signIn };
+
+  /**
+   * Retrieves the current session, refreshing tokens if necessary.
+   * Requires a prior successful signIn() call.
+   * @param {boolean} [forceRefresh=false] - Force token refresh even if valid
+   * @param {boolean} [legacy=false] - If true, returns accessToken for legacy API
+   * @returns {Promise<string>} - The JWT token (idToken or accessToken)
+   * @throws {Error} - If no session exists (user needs to sign in)
+   */
+  const getSession = async (
+    forceRefresh: boolean = false,
+    legacy: boolean = false,
+  ): Promise<string> => {
+    configureAmplify();
+    const { tokens } = await auth.fetchAuthSession({ forceRefresh });
+    assert.ok(tokens, "No session found - please sign in first");
+    if (legacy) {
+      assert.ok(tokens.accessToken, "No access token found");
+      return tokens.accessToken.toString();
+    }
+    assert.ok(tokens.idToken, "No ID token found");
+    return tokens.idToken.toString();
+  };
+
+  return { signIn, getSession };
 };
 
 // Create the default auth service using amplifyAuth
-const { signIn } = createAuthService(amplifyAuth);
+const { signIn, getSession } = createAuthService(amplifyAuth);
 
 const deviceInfo =
   (axiosInstance: AxiosInstance) =>
@@ -312,4 +346,11 @@ const configure = (baseURL: string = API_URL) => {
   };
 };
 
-export { configure, createAuthService, headers, signIn };
+export {
+  configure,
+  configureAmplify,
+  createAuthService,
+  getSession,
+  headers,
+  signIn,
+};
