@@ -1,9 +1,9 @@
 # Edilkamin.js
 
-[![Tests](https://github.com/AndreMiras/edilkamin.js/workflows/Tests/badge.svg)](https://github.com/AndreMiras/edilkamin.js/actions/workflows/tests.yml)
+[![Tests](htts://github.com/AndreMiras/edilkamin.js/actions/workflows/tests.yml/badge.svg)](https://github.com/AndreMiras/edilkamin.js/actions/workflows/tests.yml)
 [![CLI Tests](https://github.com/AndreMiras/edilkamin.js/actions/workflows/cli-tests.yml/badge.svg)](https://github.com/AndreMiras/edilkamin.js/actions/workflows/cli-tests.yml)
 [![codecov](https://codecov.io/gh/AndreMiras/edilkamin.js/graph/badge.svg?token=YG3LKXNZWU)](https://app.codecov.io/gh/AndreMiras/edilkamin.js/tree/main)
-[![Documentation](https://github.com/AndreMiras/edilkamin.js/workflows/Documentation/badge.svg)](https://github.com/AndreMiras/edilkamin.js/actions/workflows/documentation.yml)
+[![Documentation](https://github.com/AndreMiras/edilkamin.js/actions/workflows/documentation.yml/badge.svg)](https://github.com/AndreMiras/edilkamin.js/actions/workflows/documentation.yml)
 [![npm version](https://badge.fury.io/js/edilkamin.svg)](https://badge.fury.io/js/edilkamin)
 
 This is a library for the [Reverse Engineered](docs/ReverseEngineering.md) "The Mind" Edilkamin API.
@@ -31,10 +31,25 @@ Basic usage:
 import { signIn, deviceInfo, setPowerOff } from "edilkamin";
 
 const macAddress = "aabbccddeeff";
-const token = signIn(username, password);
-deviceInfo(token, macAddress).then(console.log);
-setPowerOff(token, macAddress).then(console.log);
+const token = await signIn(username, password);
+console.log(await deviceInfo(token, macAddress));
+console.log(await setPowerOff(token, macAddress));
 ```
+
+For long-running applications, use `getSession()` to automatically refresh tokens:
+
+```js
+import { signIn, getSession, deviceInfo } from "edilkamin";
+
+// Authenticate once
+await signIn(username, password);
+
+// Get current session (auto-refreshes if expired)
+const token = await getSession();
+console.log(await deviceInfo(token, macAddress));
+```
+
+Sessions persist for ~30 days without re-authentication. Call `getSession()` to retrieve fresh tokens as needed.
 
 It's also possible to change the default backend URL:
 
@@ -43,8 +58,8 @@ import { signIn, configure } from "edilkamin";
 
 const baseUrl = "https://my-proxy.com/";
 const { deviceInfo, setPower } = configure(baseUrl);
-deviceInfo(token, macAddress).then(console.log);
-setPower(token, macAddress, 0).then(console.log);
+console.log(await deviceInfo(token, macAddress));
+console.log(await setPower(token, macAddress, 0));
 ```
 
 ## CLI
@@ -52,7 +67,14 @@ setPower(token, macAddress, 0).then(console.log);
 The library includes a CLI tool that is useful for debugging.
 
 ```sh
+# First time: provide credentials to authenticate
 yarn cli deviceInfo --mac $MAC --username $USERNAME --password $PASSWORD
+
+# Subsequent calls: session persists, credentials optional
+yarn cli deviceInfo --mac $MAC
+
+# Clear stored session
+yarn cli logout
 ```
 
 Or with `npx` once the library is installed:
@@ -60,6 +82,8 @@ Or with `npx` once the library is installed:
 ```sh
 npx edilkamin deviceInfo --mac $MAC --username $USERNAME --password $PASSWORD
 ```
+
+The CLI stores session data in `~/.edilkamin/session.json` and automatically refreshes tokens when needed. Sessions remain valid for ~30 days.
 
 ## API Versions
 
