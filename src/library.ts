@@ -2,7 +2,6 @@ import { strict as assert } from "assert";
 import { Amplify } from "aws-amplify";
 import * as amplifyAuth from "aws-amplify/auth";
 import { cognitoUserPoolsTokenProvider } from "aws-amplify/auth/cognito";
-import axios, { AxiosInstance } from "axios";
 
 import { processResponse } from "./buffer-utils";
 import { API_URL } from "./constants";
@@ -13,6 +12,22 @@ import {
   DeviceInfoType,
   EditDeviceAssociationBody,
 } from "./types";
+
+/**
+ * Makes a fetch request and returns parsed JSON response.
+ * Throws an error for non-2xx status codes.
+ */
+const fetchJson = async <T>(
+  baseURL: string,
+  path: string,
+  options: RequestInit = {},
+): Promise<T> => {
+  const response = await fetch(`${baseURL}${path}`, options);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  return response.json();
+};
 
 const amplifyconfiguration = {
   aws_project_region: "eu-central-1",
@@ -111,7 +126,7 @@ const createAuthService = (auth: typeof amplifyAuth) => {
 const { signIn, getSession } = createAuthService(amplifyAuth);
 
 const deviceInfo =
-  (axiosInstance: AxiosInstance) =>
+  (baseURL: string) =>
   /**
    * Retrieves information about a device by its MAC address.
    * Automatically decompresses any gzip-compressed Buffer fields in the response.
@@ -121,28 +136,33 @@ const deviceInfo =
    * @returns {Promise<DeviceInfoType>} - A promise that resolves to the device info.
    */
   async (jwtToken: string, macAddress: string): Promise<DeviceInfoType> => {
-    const response = await axiosInstance.get<DeviceInfoRawType>(
+    const data = await fetchJson<DeviceInfoRawType>(
+      baseURL,
       `device/${macAddress}/info`,
       {
+        method: "GET",
         headers: headers(jwtToken),
       },
     );
     // Process response to decompress any gzipped Buffer fields
-    return processResponse(response.data) as DeviceInfoType;
+    return processResponse(data) as DeviceInfoType;
   };
 
 const mqttCommand =
-  (axiosInstance: AxiosInstance) =>
+  (baseURL: string) =>
   // eslint-disable-next-line  @typescript-eslint/no-explicit-any
   (jwtToken: string, macAddress: string, payload: any) =>
-    axiosInstance.put(
-      "mqtt/command",
-      { mac_address: macAddress, ...payload },
-      { headers: headers(jwtToken) },
-    );
+    fetchJson(baseURL, "mqtt/command", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...headers(jwtToken),
+      },
+      body: JSON.stringify({ mac_address: macAddress, ...payload }),
+    });
 
 const setPower =
-  (axiosInstance: AxiosInstance) =>
+  (baseURL: string) =>
   /**
    * Sends a command to set the power state of a device.
    *
@@ -152,10 +172,10 @@ const setPower =
    * @returns {Promise<string>} - A promise that resolves to the command response.
    */
   (jwtToken: string, macAddress: string, value: number) =>
-    mqttCommand(axiosInstance)(jwtToken, macAddress, { name: "power", value });
+    mqttCommand(baseURL)(jwtToken, macAddress, { name: "power", value });
 
 const setPowerOn =
-  (axiosInstance: AxiosInstance) =>
+  (baseURL: string) =>
   /**
    * Turns a device ON by setting its power state.
    *
@@ -168,10 +188,10 @@ const setPowerOn =
    * console.log(response);
    */
   (jwtToken: string, macAddress: string) =>
-    setPower(axiosInstance)(jwtToken, macAddress, 1);
+    setPower(baseURL)(jwtToken, macAddress, 1);
 
 const setPowerOff =
-  (axiosInstance: AxiosInstance) =>
+  (baseURL: string) =>
   /**
    * Turns a device OFF by setting its power state.
    *
@@ -184,10 +204,10 @@ const setPowerOff =
    * console.log(response);
    */
   (jwtToken: string, macAddress: string) =>
-    setPower(axiosInstance)(jwtToken, macAddress, 0);
+    setPower(baseURL)(jwtToken, macAddress, 0);
 
 const getPower =
-  (axiosInstance: AxiosInstance) =>
+  (baseURL: string) =>
   /**
    * Retrieves the power status of the device.
    *
@@ -196,12 +216,12 @@ const getPower =
    * @returns {Promise<boolean>} - A promise that resolves to the power status.
    */
   async (jwtToken: string, macAddress: string): Promise<boolean> => {
-    const info = await deviceInfo(axiosInstance)(jwtToken, macAddress);
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
     return info.status.commands.power;
   };
 
 const getEnvironmentTemperature =
-  (axiosInstance: AxiosInstance) =>
+  (baseURL: string) =>
   /**
    * Retrieves the environment temperature from the device's sensors.
    *
@@ -210,12 +230,12 @@ const getEnvironmentTemperature =
    * @returns {Promise<number>} - A promise that resolves to the temperature value.
    */
   async (jwtToken: string, macAddress: string): Promise<number> => {
-    const info = await deviceInfo(axiosInstance)(jwtToken, macAddress);
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
     return info.status.temperatures.enviroment;
   };
 
 const getTargetTemperature =
-  (axiosInstance: AxiosInstance) =>
+  (baseURL: string) =>
   /**
    * Retrieves the target temperature value set on the device.
    *
@@ -224,12 +244,12 @@ const getTargetTemperature =
    * @returns {Promise<number>} - A promise that resolves to the target temperature (degree celsius).
    */
   async (jwtToken: string, macAddress: string): Promise<number> => {
-    const info = await deviceInfo(axiosInstance)(jwtToken, macAddress);
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
     return info.nvm.user_parameters.enviroment_1_temperature;
   };
 
 const setTargetTemperature =
-  (axiosInstance: AxiosInstance) =>
+  (baseURL: string) =>
   /**
    * Sends a command to set the target temperature (degree celsius) of a device.
    *
@@ -239,13 +259,13 @@ const setTargetTemperature =
    * @returns {Promise<string>} - A promise that resolves to the command response.
    */
   (jwtToken: string, macAddress: string, temperature: number) =>
-    mqttCommand(axiosInstance)(jwtToken, macAddress, {
+    mqttCommand(baseURL)(jwtToken, macAddress, {
       name: "enviroment_1_temperature",
       value: temperature,
     });
 
 const registerDevice =
-  (axiosInstance: AxiosInstance) =>
+  (baseURL: string) =>
   /**
    * Registers a device with the user's account.
    * This must be called before other device operations will work on the new API.
@@ -270,16 +290,18 @@ const registerDevice =
       deviceRoom,
       serialNumber,
     };
-    const response = await axiosInstance.post<DeviceAssociationResponse>(
-      "device",
-      body,
-      { headers: headers(jwtToken) },
-    );
-    return response.data;
+    return fetchJson<DeviceAssociationResponse>(baseURL, "device", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...headers(jwtToken),
+      },
+      body: JSON.stringify(body),
+    });
   };
 
 const editDevice =
-  (axiosInstance: AxiosInstance) =>
+  (baseURL: string) =>
   /**
    * Updates a device's name and room.
    *
@@ -300,12 +322,18 @@ const editDevice =
       deviceName,
       deviceRoom,
     };
-    const response = await axiosInstance.put<DeviceAssociationResponse>(
+    return fetchJson<DeviceAssociationResponse>(
+      baseURL,
       `device/${normalizedMac}`,
-      body,
-      { headers: headers(jwtToken) },
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...headers(jwtToken),
+        },
+        body: JSON.stringify(body),
+      },
     );
-    return response.data;
   };
 
 /**
@@ -319,32 +347,18 @@ const editDevice =
  * const api = configure();
  * const power = await api.getPower(jwtToken, macAddress);
  */
-const configure = (baseURL: string = API_URL) => {
-  const axiosInstance = axios.create({ baseURL });
-  const deviceInfoInstance = deviceInfo(axiosInstance);
-  const registerDeviceInstance = registerDevice(axiosInstance);
-  const editDeviceInstance = editDevice(axiosInstance);
-  const setPowerInstance = setPower(axiosInstance);
-  const setPowerOffInstance = setPowerOff(axiosInstance);
-  const setPowerOnInstance = setPowerOn(axiosInstance);
-  const getPowerInstance = getPower(axiosInstance);
-  const getEnvironmentTemperatureInstance =
-    getEnvironmentTemperature(axiosInstance);
-  const getTargetTemperatureInstance = getTargetTemperature(axiosInstance);
-  const setTargetTemperatureInstance = setTargetTemperature(axiosInstance);
-  return {
-    deviceInfo: deviceInfoInstance,
-    registerDevice: registerDeviceInstance,
-    editDevice: editDeviceInstance,
-    setPower: setPowerInstance,
-    setPowerOff: setPowerOffInstance,
-    setPowerOn: setPowerOnInstance,
-    getPower: getPowerInstance,
-    getEnvironmentTemperature: getEnvironmentTemperatureInstance,
-    getTargetTemperature: getTargetTemperatureInstance,
-    setTargetTemperature: setTargetTemperatureInstance,
-  };
-};
+const configure = (baseURL: string = API_URL) => ({
+  deviceInfo: deviceInfo(baseURL),
+  registerDevice: registerDevice(baseURL),
+  editDevice: editDevice(baseURL),
+  setPower: setPower(baseURL),
+  setPowerOff: setPowerOff(baseURL),
+  setPowerOn: setPowerOn(baseURL),
+  getPower: getPower(baseURL),
+  getEnvironmentTemperature: getEnvironmentTemperature(baseURL),
+  getTargetTemperature: getTargetTemperature(baseURL),
+  setTargetTemperature: setTargetTemperature(baseURL),
+});
 
 export {
   configure,

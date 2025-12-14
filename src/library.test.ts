@@ -1,6 +1,5 @@
 import { strict as assert } from "assert";
 import * as amplifyAuth from "aws-amplify/auth";
-import axios from "axios";
 import pako from "pako";
 import sinon from "sinon";
 
@@ -21,16 +20,23 @@ const createGzippedBuffer = (
   };
 };
 
+/**
+ * Helper to create a mock Response object for fetch.
+ */
+const mockResponse = (data: unknown, status = 200): Response =>
+  ({
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: status >= 200 && status < 300 ? "OK" : "Error",
+    json: () => Promise.resolve(data),
+  }) as Response;
+
 describe("library", () => {
-  let axiosStub: sinon.SinonStub;
+  let fetchStub: sinon.SinonStub;
   const expectedToken = "mockJwtToken";
 
   beforeEach(() => {
-    axiosStub = sinon.stub(axios, "create").returns({
-      get: sinon.stub(),
-      put: sinon.stub(),
-      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-    } as any);
+    fetchStub = sinon.stub(globalThis, "fetch");
   });
 
   afterEach(() => {
@@ -207,28 +213,24 @@ describe("library", () => {
       "getTargetTemperature",
       "setTargetTemperature",
     ];
-    it("should create API methods with the correct baseURL", () => {
-      const baseURL = "https://example.com/api";
+    it("should create API methods with the correct baseURL", async () => {
+      const baseURL = "https://example.com/api/";
+      fetchStub.resolves(mockResponse({ test: "data" }));
       const api = configure(baseURL);
-      assert.deepEqual(axiosStub.args, [
-        [
-          {
-            baseURL,
-          },
-        ],
-      ]);
       assert.deepEqual(Object.keys(api), expectedApi);
+      // Verify baseURL is used when making a request
+      await api.deviceInfo(expectedToken, "mockMac");
+      assert.ok(fetchStub.calledOnce);
+      assert.ok(fetchStub.firstCall.args[0].startsWith(baseURL));
     });
-    it("should create API methods with the default baseURL", () => {
+    it("should create API methods with the default baseURL", async () => {
+      fetchStub.resolves(mockResponse({ test: "data" }));
       const api = configure();
-      assert.deepEqual(axiosStub.args, [
-        [
-          {
-            baseURL: API_URL,
-          },
-        ],
-      ]);
       assert.deepEqual(Object.keys(api), expectedApi);
+      // Verify default baseURL is used when making a request
+      await api.deviceInfo(expectedToken, "mockMac");
+      assert.ok(fetchStub.calledOnce);
+      assert.ok(fetchStub.firstCall.args[0].startsWith(API_URL));
     });
   });
 
@@ -249,19 +251,19 @@ describe("library", () => {
       },
     };
 
-    it("should call axios for deviceInfo", async () => {
-      const mockAxios = {
-        get: sinon.stub().resolves({ data: mockDeviceInfo }),
-      };
-      axiosStub.returns(mockAxios);
-      const api = configure("https://example.com/api");
+    it("should call fetch for deviceInfo", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfo));
+      const api = configure("https://example.com/api/");
       const result = await api.deviceInfo(expectedToken, "mockMacAddress");
-      assert.deepEqual(mockAxios.get.args, [
-        [
-          "device/mockMacAddress/info",
-          { headers: { Authorization: `Bearer ${expectedToken}` } },
-        ],
-      ]);
+      assert.ok(fetchStub.calledOnce);
+      assert.equal(
+        fetchStub.firstCall.args[0],
+        "https://example.com/api/device/mockMacAddress/info",
+      );
+      assert.deepEqual(fetchStub.firstCall.args[1], {
+        method: "GET",
+        headers: { Authorization: `Bearer ${expectedToken}` },
+      });
       assert.deepEqual(result, mockDeviceInfo);
     });
 
@@ -280,29 +282,29 @@ describe("library", () => {
         expectedValue: 0,
       },
     ].forEach(({ method, call, expectedValue }) => {
-      it(`should call axios for ${method}`, async () => {
-        const mockAxios = {
-          put: sinon.stub().resolves({ status: 200 }),
-        };
-        axiosStub.returns(mockAxios);
-        const api = configure("https://example.com/api");
+      it(`should call fetch for ${method}`, async () => {
+        fetchStub.resolves(mockResponse({ success: true }));
+        const api = configure("https://example.com/api/");
 
         // Invoke the method using the mapped call function
-        const result = await call(api);
-        assert.deepEqual(mockAxios.put.args, [
-          [
-            "mqtt/command",
-            {
-              mac_address: "mockMacAddress",
-              name: "power",
-              value: expectedValue,
-            },
-            {
-              headers: { Authorization: "Bearer mockToken" },
-            },
-          ],
-        ]);
-        assert.equal(result.status, 200);
+        await call(api);
+        assert.ok(fetchStub.calledOnce);
+        assert.equal(
+          fetchStub.firstCall.args[0],
+          "https://example.com/api/mqtt/command",
+        );
+        assert.deepEqual(fetchStub.firstCall.args[1], {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer mockToken",
+          },
+          body: JSON.stringify({
+            mac_address: "mockMacAddress",
+            name: "power",
+            value: expectedValue,
+          }),
+        });
       });
     });
 
@@ -327,21 +329,21 @@ describe("library", () => {
       },
     ];
     getterTests.forEach(({ method, call, expectedResult }) => {
-      it(`should call axios and return the correct value for ${method}`, async () => {
-        const mockAxios = {
-          get: sinon.stub().resolves({ data: mockDeviceInfo }),
-        };
-        axiosStub.returns(mockAxios);
-        const api = configure("https://example.com/api");
+      it(`should call fetch and return the correct value for ${method}`, async () => {
+        fetchStub.resolves(mockResponse(mockDeviceInfo));
+        const api = configure("https://example.com/api/");
 
         const result = await call(api, expectedToken, "mockMacAddress");
 
-        assert.deepEqual(mockAxios.get.args, [
-          [
-            "device/mockMacAddress/info",
-            { headers: { Authorization: `Bearer ${expectedToken}` } },
-          ],
-        ]);
+        assert.ok(fetchStub.calledOnce);
+        assert.equal(
+          fetchStub.firstCall.args[0],
+          "https://example.com/api/device/mockMacAddress/info",
+        );
+        assert.deepEqual(fetchStub.firstCall.args[1], {
+          method: "GET",
+          headers: { Authorization: `Bearer ${expectedToken}` },
+        });
         assert.equal(result, expectedResult);
       });
     });
@@ -362,52 +364,42 @@ describe("library", () => {
       },
     ];
     setterTests.forEach(({ method, call, payload }) => {
-      it(`should call axios and send the correct payload for ${method}`, async () => {
-        const mockAxios = {
-          put: sinon.stub().resolves({ status: 200 }),
-        };
-        axiosStub.returns(mockAxios);
-        const api = configure("https://example.com/api");
+      it(`should call fetch and send the correct payload for ${method}`, async () => {
+        fetchStub.resolves(mockResponse({ success: true }));
+        const api = configure("https://example.com/api/");
 
-        const result = await call(
-          api,
-          expectedToken,
-          "mockMacAddress",
-          payload.value,
+        await call(api, expectedToken, "mockMacAddress", payload.value);
+
+        assert.ok(fetchStub.calledOnce);
+        assert.equal(
+          fetchStub.firstCall.args[0],
+          "https://example.com/api/mqtt/command",
         );
-
-        assert.deepEqual(mockAxios.put.args, [
-          [
-            "mqtt/command",
-            {
-              mac_address: "mockMacAddress",
-              ...payload,
-            },
-            {
-              headers: { Authorization: `Bearer ${expectedToken}` },
-            },
-          ],
-        ]);
-        assert.equal(result.status, 200);
+        assert.deepEqual(fetchStub.firstCall.args[1], {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${expectedToken}`,
+          },
+          body: JSON.stringify({
+            mac_address: "mockMacAddress",
+            ...payload,
+          }),
+        });
       });
     });
   });
 
   describe("registerDevice", () => {
     it("should call POST /device with correct payload", async () => {
-      const mockResponse = {
+      const mockResponseData = {
         macAddress: "AABBCCDDEEFF",
         deviceName: "Test Stove",
         deviceRoom: "Living Room",
         serialNumber: "EDK123",
       };
-      const mockAxios = {
-        post: sinon.stub().resolves({ data: mockResponse }),
-        get: sinon.stub(),
-        put: sinon.stub(),
-      };
-      axiosStub.returns(mockAxios);
-      const api = configure("https://example.com/api");
+      fetchStub.resolves(mockResponse(mockResponseData));
+      const api = configure("https://example.com/api/");
 
       const result = await api.registerDevice(
         expectedToken,
@@ -417,66 +409,59 @@ describe("library", () => {
         "Living Room",
       );
 
-      assert.deepEqual(mockAxios.post.args, [
-        [
-          "device",
-          {
-            macAddress: "AABBCCDDEEFF",
-            deviceName: "Test Stove",
-            deviceRoom: "Living Room",
-            serialNumber: "EDK123",
-          },
-          { headers: { Authorization: `Bearer ${expectedToken}` } },
-        ],
-      ]);
-      assert.deepEqual(result, mockResponse);
+      assert.ok(fetchStub.calledOnce);
+      assert.equal(
+        fetchStub.firstCall.args[0],
+        "https://example.com/api/device",
+      );
+      assert.deepEqual(fetchStub.firstCall.args[1], {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${expectedToken}`,
+        },
+        body: JSON.stringify({
+          macAddress: "AABBCCDDEEFF",
+          deviceName: "Test Stove",
+          deviceRoom: "Living Room",
+          serialNumber: "EDK123",
+        }),
+      });
+      assert.deepEqual(result, mockResponseData);
     });
 
     it("should normalize MAC address by removing colons", async () => {
-      const mockAxios = {
-        post: sinon.stub().resolves({ data: {} }),
-        get: sinon.stub(),
-        put: sinon.stub(),
-      };
-      axiosStub.returns(mockAxios);
-      const api = configure("https://example.com/api");
+      fetchStub.resolves(mockResponse({}));
+      const api = configure("https://example.com/api/");
 
       await api.registerDevice(expectedToken, "AA:BB:CC:DD:EE:FF", "EDK123");
 
-      assert.equal(mockAxios.post.args[0][1].macAddress, "AABBCCDDEEFF");
+      const body = JSON.parse(fetchStub.firstCall.args[1].body);
+      assert.equal(body.macAddress, "AABBCCDDEEFF");
     });
 
     it("should use empty strings as defaults for name and room", async () => {
-      const mockAxios = {
-        post: sinon.stub().resolves({ data: {} }),
-        get: sinon.stub(),
-        put: sinon.stub(),
-      };
-      axiosStub.returns(mockAxios);
-      const api = configure("https://example.com/api");
+      fetchStub.resolves(mockResponse({}));
+      const api = configure("https://example.com/api/");
 
       await api.registerDevice(expectedToken, "AABBCCDDEEFF", "EDK123");
 
-      assert.equal(mockAxios.post.args[0][1].deviceName, "");
-      assert.equal(mockAxios.post.args[0][1].deviceRoom, "");
+      const body = JSON.parse(fetchStub.firstCall.args[1].body);
+      assert.equal(body.deviceName, "");
+      assert.equal(body.deviceRoom, "");
     });
   });
 
   describe("editDevice", () => {
     it("should call PUT /device/{mac} with correct payload", async () => {
-      const mockResponse = {
+      const mockResponseData = {
         macAddress: "AABBCCDDEEFF",
         deviceName: "Updated Name",
         deviceRoom: "Basement",
         serialNumber: "EDK123",
       };
-      const mockAxios = {
-        put: sinon.stub().resolves({ data: mockResponse }),
-        get: sinon.stub(),
-        post: sinon.stub(),
-      };
-      axiosStub.returns(mockAxios);
-      const api = configure("https://example.com/api");
+      fetchStub.resolves(mockResponse(mockResponseData));
+      const api = configure("https://example.com/api/");
 
       const result = await api.editDevice(
         expectedToken,
@@ -485,32 +470,34 @@ describe("library", () => {
         "Basement",
       );
 
-      assert.deepEqual(mockAxios.put.args, [
-        [
-          "device/AABBCCDDEEFF",
-          {
-            deviceName: "Updated Name",
-            deviceRoom: "Basement",
-          },
-          { headers: { Authorization: `Bearer ${expectedToken}` } },
-        ],
-      ]);
-      assert.deepEqual(result, mockResponse);
+      assert.ok(fetchStub.calledOnce);
+      assert.equal(
+        fetchStub.firstCall.args[0],
+        "https://example.com/api/device/AABBCCDDEEFF",
+      );
+      assert.deepEqual(fetchStub.firstCall.args[1], {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${expectedToken}`,
+        },
+        body: JSON.stringify({
+          deviceName: "Updated Name",
+          deviceRoom: "Basement",
+        }),
+      });
+      assert.deepEqual(result, mockResponseData);
     });
 
     it("should use empty strings as defaults for name and room", async () => {
-      const mockAxios = {
-        put: sinon.stub().resolves({ data: {} }),
-        get: sinon.stub(),
-        post: sinon.stub(),
-      };
-      axiosStub.returns(mockAxios);
-      const api = configure("https://example.com/api");
+      fetchStub.resolves(mockResponse({}));
+      const api = configure("https://example.com/api/");
 
       await api.editDevice(expectedToken, "AABBCCDDEEFF");
 
-      assert.equal(mockAxios.put.args[0][1].deviceName, "");
-      assert.equal(mockAxios.put.args[0][1].deviceRoom, "");
+      const body = JSON.parse(fetchStub.firstCall.args[1].body);
+      assert.equal(body.deviceName, "");
+      assert.equal(body.deviceRoom, "");
     });
   });
 
@@ -520,7 +507,7 @@ describe("library", () => {
         commands: { power: true },
         temperatures: { enviroment: 19, board: 25 },
       };
-      const mockResponse = {
+      const mockResponseData = {
         status: createGzippedBuffer(statusData),
         nvm: {
           user_parameters: {
@@ -529,11 +516,8 @@ describe("library", () => {
         },
       };
 
-      const mockAxios = {
-        get: sinon.stub().resolves({ data: mockResponse }),
-      };
-      axiosStub.returns(mockAxios);
-      const api = configure("https://example.com/api");
+      fetchStub.resolves(mockResponse(mockResponseData));
+      const api = configure("https://example.com/api/");
 
       const result = await api.deviceInfo(expectedToken, "mockMacAddress");
 
@@ -550,7 +534,7 @@ describe("library", () => {
           is_sound_active: true,
         },
       };
-      const mockResponse = {
+      const mockResponseData = {
         status: {
           commands: { power: true },
           temperatures: { enviroment: 19 },
@@ -558,11 +542,8 @@ describe("library", () => {
         nvm: createGzippedBuffer(nvmData),
       };
 
-      const mockAxios = {
-        get: sinon.stub().resolves({ data: mockResponse }),
-      };
-      axiosStub.returns(mockAxios);
-      const api = configure("https://example.com/api");
+      fetchStub.resolves(mockResponse(mockResponseData));
+      const api = configure("https://example.com/api/");
 
       const result = await api.deviceInfo(expectedToken, "mockMacAddress");
 
@@ -583,16 +564,13 @@ describe("library", () => {
           is_sound_active: false,
         },
       };
-      const mockResponse = {
+      const mockResponseData = {
         status: createGzippedBuffer(statusData),
         nvm: createGzippedBuffer(nvmData),
       };
 
-      const mockAxios = {
-        get: sinon.stub().resolves({ data: mockResponse }),
-      };
-      axiosStub.returns(mockAxios);
-      const api = configure("https://example.com/api");
+      fetchStub.resolves(mockResponse(mockResponseData));
+      const api = configure("https://example.com/api/");
 
       const result = await api.deviceInfo(expectedToken, "mockMacAddress");
 
@@ -605,16 +583,13 @@ describe("library", () => {
         commands: { power: true },
         temperatures: { enviroment: 19 },
       };
-      const mockResponse = {
+      const mockResponseData = {
         status: createGzippedBuffer(statusData),
         nvm: { user_parameters: { enviroment_1_temperature: 22 } },
       };
 
-      const mockAxios = {
-        get: sinon.stub().resolves({ data: mockResponse }),
-      };
-      axiosStub.returns(mockAxios);
-      const api = configure("https://example.com/api");
+      fetchStub.resolves(mockResponse(mockResponseData));
+      const api = configure("https://example.com/api/");
 
       const result = await api.getPower(expectedToken, "mockMacAddress");
 
@@ -626,16 +601,13 @@ describe("library", () => {
         commands: { power: true },
         temperatures: { enviroment: 19, board: 25 },
       };
-      const mockResponse = {
+      const mockResponseData = {
         status: createGzippedBuffer(statusData),
         nvm: { user_parameters: { enviroment_1_temperature: 22 } },
       };
 
-      const mockAxios = {
-        get: sinon.stub().resolves({ data: mockResponse }),
-      };
-      axiosStub.returns(mockAxios);
-      const api = configure("https://example.com/api");
+      fetchStub.resolves(mockResponse(mockResponseData));
+      const api = configure("https://example.com/api/");
 
       const result = await api.getEnvironmentTemperature(
         expectedToken,
@@ -651,16 +623,13 @@ describe("library", () => {
           enviroment_1_temperature: 22,
         },
       };
-      const mockResponse = {
+      const mockResponseData = {
         status: { commands: { power: true }, temperatures: { enviroment: 19 } },
         nvm: createGzippedBuffer(nvmData),
       };
 
-      const mockAxios = {
-        get: sinon.stub().resolves({ data: mockResponse }),
-      };
-      axiosStub.returns(mockAxios);
-      const api = configure("https://example.com/api");
+      fetchStub.resolves(mockResponse(mockResponseData));
+      const api = configure("https://example.com/api/");
 
       const result = await api.getTargetTemperature(
         expectedToken,

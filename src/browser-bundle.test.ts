@@ -12,7 +12,7 @@ describe("browser-bundle", () => {
       bundle: true,
       write: false,
       // External dependencies that are expected (real deps + assert which is used for validation)
-      external: ["aws-amplify", "aws-amplify/*", "axios", "pako", "assert"],
+      external: ["aws-amplify", "aws-amplify/*", "pako", "assert"],
       logLevel: "silent",
     });
     // If we get here without error, the bundle succeeded
