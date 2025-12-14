@@ -639,4 +639,33 @@ describe("library", () => {
       assert.equal(result, 22);
     });
   });
+
+  describe("Error Handling", () => {
+    const errorTests = [
+      { status: 400, statusText: "Bad Request" },
+      { status: 401, statusText: "Unauthorized" },
+      { status: 404, statusText: "Not Found" },
+      { status: 500, statusText: "Internal Server Error" },
+    ];
+
+    errorTests.forEach(({ status, statusText }) => {
+      it(`should throw error when fetch returns ${status}`, async () => {
+        const errorResponse = {
+          ok: false,
+          status,
+          statusText,
+          json: () => Promise.resolve({ error: statusText }),
+        } as Response;
+        fetchStub.resolves(errorResponse);
+        const api = configure("https://example.com/api/");
+
+        await assert.rejects(
+          async () => api.deviceInfo(expectedToken, "mockMac"),
+          {
+            message: `HTTP ${status}: ${statusText}`,
+          },
+        );
+      });
+    });
+  });
 });

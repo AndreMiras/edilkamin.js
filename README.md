@@ -1,6 +1,6 @@
 # Edilkamin.js
 
-[![Tests](htts://github.com/AndreMiras/edilkamin.js/actions/workflows/tests.yml/badge.svg)](https://github.com/AndreMiras/edilkamin.js/actions/workflows/tests.yml)
+[![Tests](https://github.com/AndreMiras/edilkamin.js/actions/workflows/tests.yml/badge.svg)](https://github.com/AndreMiras/edilkamin.js/actions/workflows/tests.yml)
 [![CLI Tests](https://github.com/AndreMiras/edilkamin.js/actions/workflows/cli-tests.yml/badge.svg)](https://github.com/AndreMiras/edilkamin.js/actions/workflows/cli-tests.yml)
 [![codecov](https://codecov.io/gh/AndreMiras/edilkamin.js/graph/badge.svg?token=YG3LKXNZWU)](https://app.codecov.io/gh/AndreMiras/edilkamin.js/tree/main)
 [![Documentation](https://github.com/AndreMiras/edilkamin.js/actions/workflows/documentation.yml/badge.svg)](https://github.com/AndreMiras/edilkamin.js/actions/workflows/documentation.yml)
