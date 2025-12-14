@@ -1,10 +1,9 @@
 {
   "compilerOptions": {
     "target": "es6",
-    "target": "es6",
     "moduleResolution": "node",
     "outDir": "dist",
-    "rootDir": "src",
+    "rootDir": ".",
     "strict": true,
     "declaration": true,
     "esModuleInterop": true,
@@ -13,5 +12,5 @@
     "noUnusedParameters": true,
     "preserveConstEnums": true
   },
-  "include": ["src/**/*.ts"]
+  "include": ["src/**/*.ts", "package.json"]
 }

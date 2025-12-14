@@ -18,3 +18,9 @@ jobs:
           node-version: ${{ matrix.node-version }}
       - run: yarn install --no-ignore-optional
       - run: yarn cli --help
+      - run: yarn build
+      - run: node dist/cjs/src/cli.js --help
+      - name: Verify CLI binary
+        run: |
+          test -f dist/cjs/src/cli.js
+          grep -q "#!/usr/bin/env node" dist/cjs/src/cli.js

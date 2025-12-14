@@ -2,18 +2,18 @@
   "name": "edilkamin",
   "version": "1.7.3",
   "description": "",
-  "main": "dist/cjs/index.js",
-  "module": "dist/esm/index.js",
-  "types": "dist/esm/index.d.ts",
+  "main": "dist/cjs/src/index.js",
+  "module": "dist/esm/src/index.js",
+  "types": "dist/esm/src/index.d.ts",
   "exports": {
     ".": {
       "import": {
-        "types": "./dist/esm/index.d.ts",
-        "default": "./dist/esm/index.js"
+        "types": "./dist/esm/src/index.d.ts",
+        "default": "./dist/esm/src/index.js"
       },
       "require": {
-        "types": "./dist/cjs/index.d.ts",
-        "default": "./dist/cjs/index.js"
+        "types": "./dist/cjs/src/index.d.ts",
+        "default": "./dist/cjs/src/index.js"
       }
     }
   },
@@ -43,7 +43,7 @@
   },
   "homepage": "https://github.com/AndreMiras/edilkamin.js#readme",
   "bin": {
-    "edilkamin": "dist/cjs/cli.js"
+    "edilkamin": "dist/cjs/src/cli.js"
   },
   "nyc": {
     "reporter": [

@@ -7,7 +7,7 @@ describe("browser-bundle", () => {
     // without requiring Node.js built-in modules (fs, os, path).
     // If this test fails, it means Node.js-only code has leaked into the main exports.
     const result = await esbuild.build({
-      entryPoints: ["dist/esm/index.js"],
+      entryPoints: ["dist/esm/src/index.js"],
       platform: "browser",
       bundle: true,
       write: false,
