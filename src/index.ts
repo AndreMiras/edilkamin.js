@@ -8,7 +8,6 @@ export {
   serialNumberFromHex,
   serialNumberToHex,
 } from "./serial-utils";
-export { clearSession } from "./token-storage";
 export {
   BufferEncodedType,
   CommandsType,
