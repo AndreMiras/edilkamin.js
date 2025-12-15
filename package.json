@@ -79,6 +79,6 @@
     "typescript": "^5.7.2"
   },
   "optionalDependencies": {
-    "commander": "^12.1.0"
+    "commander": "^14.0.2"
   }
 }
