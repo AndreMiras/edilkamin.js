@@ -82,6 +82,20 @@ interface DeviceAssociationResponse {
   serialNumber: string;
 }
 
+/**
+ * Represents a discovered Edilkamin device from Bluetooth scanning.
+ */
+interface DiscoveredDevice {
+  /** BLE MAC address as discovered */
+  bleMac: string;
+  /** WiFi MAC address (BLE MAC - 2), used for API calls */
+  wifiMac: string;
+  /** Device name (typically "EDILKAMIN_EP") */
+  name: string;
+  /** Signal strength in dBm (optional, not all platforms provide this) */
+  rssi?: number;
+}
+
 export type {
   BufferEncodedType,
   CommandsType,
@@ -89,6 +103,7 @@ export type {
   DeviceAssociationResponse,
   DeviceInfoRawType,
   DeviceInfoType,
+  DiscoveredDevice,
   EditDeviceAssociationBody,
   StatusType,
   TemperaturesType,

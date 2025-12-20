@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "target": "es6",
+    "lib": ["ES6", "DOM"],
     "moduleResolution": "node",
     "outDir": "dist",
     "rootDir": ".",

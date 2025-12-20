@@ -115,6 +115,39 @@ const legacyApi = configure(OLD_API_URL);
 
 > **Note**: The legacy API uses AWS API Gateway and may be deprecated in the future.
 
+## Bluetooth Device Discovery
+
+For automatic device discovery in web browsers, use the `edilkamin/bluetooth` subpath export.
+
+### Quick Example (Web)
+
+```javascript
+import { scanForDevices } from "edilkamin/bluetooth";
+import { deviceInfo, signIn } from "edilkamin";
+
+// Scan for nearby stoves (requires user gesture)
+const devices = await scanForDevices();
+const { wifiMac } = devices[0];
+
+// Use discovered MAC for API calls
+const token = await signIn(username, password);
+const info = await deviceInfo(token, wifiMac);
+```
+
+### MAC Address Helper
+
+The core library includes a helper to convert BLE MAC to WiFi MAC:
+
+```javascript
+import { bleToWifiMac } from "edilkamin";
+
+// BLE MAC from Bluetooth scan
+const bleMac = "A8:03:2A:FE:D5:0A";
+
+// WiFi MAC for API calls (BLE - 2)
+const wifiMac = bleToWifiMac(bleMac); // "a8032afed508"
+```
+
 ## Motivations
 
 - providing an open source web alternative
@@ -132,6 +165,6 @@ const legacyApi = configure(OLD_API_URL);
 
 ## Limitations
 
-It seems like there's no endpoint to list stoves associated to a user.
-The way the official app seem to work is by probing the stove via bluetooth.
-Then cache the stove MAC address to a local database for later use.
+- **No server-side device listing**: The API doesn't provide an endpoint to list stoves associated to a user.
+- **Bluetooth discovery available**: Use `edilkamin/bluetooth` for web browser device discovery, similar to the official app.
+- **Manual MAC entry fallback**: For unsupported browsers or CLI, users can find the BLE MAC with different means and use `bleToWifiMac()` to calculate the WiFi MAC for API calls.
