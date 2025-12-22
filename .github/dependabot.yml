@@ -11,7 +11,11 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: ":arrow_up:"
-
+    # Ignore non-LTS Node.js versions for @types/node
+    # Update this when bumping to the next LTS (e.g., 26.x -> ignore 27.x)
+    ignore:
+      - dependency-name: "@types/node"
+        versions: ["25.x"]
   # GitHub Actions dependencies
   - package-ecosystem: "github-actions"
     directory: "/"
