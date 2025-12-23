@@ -299,6 +299,24 @@ const createProgram = (): Command => {
         mac: string,
       ) => api.getEnvironment3Temperature(jwtToken, mac),
     },
+    {
+      commandName: "getMeasureUnit",
+      description: "Retrieve temperature unit (true=Fahrenheit, false=Celsius)",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getMeasureUnit(jwtToken, mac),
+    },
+    {
+      commandName: "getLanguage",
+      description: "Retrieve display language code (0-9)",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getLanguage(jwtToken, mac),
+    },
   ].forEach(({ commandName, description, getter }) => {
     addLegacyOption(
       addMacOption(
@@ -437,6 +455,27 @@ const createProgram = (): Command => {
         mac: string,
         value: number,
       ) => api.setEnvironment3Temperature(jwtToken, mac, value),
+    },
+    {
+      commandName: "setMeasureUnit",
+      description: "Set temperature unit (1=Fahrenheit, 0=Celsius)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setMeasureUnit(jwtToken, mac, value === 1),
+    },
+    {
+      commandName: "setLanguage",
+      description:
+        "Set display language (0=IT,1=FR,2=EN,3=ES,4=PT,5=DA,6=NL,7=DE,8=HU,9=PL)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setLanguage(jwtToken, mac, value),
     },
   ].forEach(({ commandName, description, setter }) => {
     addLegacyOption(

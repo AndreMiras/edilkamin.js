@@ -33,6 +33,8 @@ interface UserParametersType {
   fan_3_ventilation: number;
   is_standby_active: boolean;
   standby_waiting_time: number;
+  is_fahrenheit: boolean;
+  language: number;
 }
 
 interface DeviceInfoType {

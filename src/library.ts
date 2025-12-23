@@ -566,6 +566,74 @@ const getEnvironment3Temperature =
     return info.nvm.user_parameters.enviroment_3_temperature;
   };
 
+const setMeasureUnit =
+  (baseURL: string) =>
+  /**
+   * Sets the temperature measurement unit (Celsius or Fahrenheit).
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {boolean} isFahrenheit - true for Fahrenheit, false for Celsius.
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, isFahrenheit: boolean) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "measure_unit",
+      value: isFahrenheit,
+    });
+
+const getMeasureUnit =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current temperature measurement unit setting.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<boolean>} - A promise that resolves to true if Fahrenheit, false if Celsius.
+   */
+  async (jwtToken: string, macAddress: string): Promise<boolean> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.nvm.user_parameters.is_fahrenheit;
+  };
+
+const setLanguage =
+  (baseURL: string) =>
+  /**
+   * Sets the display language of the device.
+   *
+   * Language codes:
+   * 0=Italian, 1=French, 2=English, 3=Spanish, 4=Portuguese,
+   * 5=Danish, 6=Dutch, 7=German, 8=Hungarian, 9=Polish
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number} languageCode - The language code (0-9).
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, languageCode: number) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "language",
+      value: languageCode,
+    });
+
+const getLanguage =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current display language setting.
+   *
+   * Language codes:
+   * 0=Italian, 1=French, 2=English, 3=Spanish, 4=Portuguese,
+   * 5=Danish, 6=Dutch, 7=German, 8=Hungarian, 9=Polish
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - A promise that resolves to the language code (0-9).
+   */
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.nvm.user_parameters.language;
+  };
+
 const registerDevice =
   (baseURL: string) =>
   /**
@@ -680,6 +748,10 @@ const configure = (baseURL: string = API_URL) => ({
   getEnvironment2Temperature: getEnvironment2Temperature(baseURL),
   setEnvironment3Temperature: setEnvironment3Temperature(baseURL),
   getEnvironment3Temperature: getEnvironment3Temperature(baseURL),
+  setMeasureUnit: setMeasureUnit(baseURL),
+  getMeasureUnit: getMeasureUnit(baseURL),
+  setLanguage: setLanguage(baseURL),
+  getLanguage: getLanguage(baseURL),
 });
 
 export {

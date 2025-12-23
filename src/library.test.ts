@@ -232,6 +232,10 @@ describe("library", () => {
       "getEnvironment2Temperature",
       "setEnvironment3Temperature",
       "getEnvironment3Temperature",
+      "setMeasureUnit",
+      "getMeasureUnit",
+      "setLanguage",
+      "getLanguage",
     ];
     it("should create API methods with the correct baseURL", async () => {
       const baseURL = "https://example.com/api/";
@@ -276,6 +280,8 @@ describe("library", () => {
           is_standby_active: true,
           standby_waiting_time: 30,
           is_auto: true,
+          is_fahrenheit: false,
+          language: 2,
         },
       },
     };
@@ -410,6 +416,18 @@ describe("library", () => {
           api.getEnvironment3Temperature(token, mac),
         expectedResult: 20,
       },
+      {
+        method: "getMeasureUnit",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getMeasureUnit(token, mac),
+        expectedResult: false,
+      },
+      {
+        method: "getLanguage",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getLanguage(token, mac),
+        expectedResult: 2,
+      },
     ];
     getterTests.forEach(({ method, call, expectedResult }) => {
       it(`should call fetch and return the correct value for ${method}`, async () => {
@@ -536,6 +554,19 @@ describe("library", () => {
           value: 23,
         },
       },
+      {
+        method: "setLanguage",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          value: number,
+        ) => api.setLanguage(token, mac, value),
+        payload: {
+          name: "language",
+          value: 2,
+        },
+      },
     ];
     setterTests.forEach(({ method, call, payload }) => {
       it(`should call fetch and send the correct payload for ${method}`, async () => {
@@ -608,6 +639,17 @@ describe("library", () => {
         ) => api.setAuto(token, mac, enabled),
         truePayload: { name: "auto_mode", value: true },
         falsePayload: { name: "auto_mode", value: false },
+      },
+      {
+        method: "setMeasureUnit",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          enabled: boolean,
+        ) => api.setMeasureUnit(token, mac, enabled),
+        truePayload: { name: "measure_unit", value: true },
+        falsePayload: { name: "measure_unit", value: false },
       },
     ];
     booleanSetterTests.forEach(
