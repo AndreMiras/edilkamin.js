@@ -242,6 +242,17 @@ describe("library", () => {
       "getLanguage",
       "getPelletInReserve",
       "getPelletAutonomyTime",
+      // Statistics getters
+      "getTotalCounters",
+      "getServiceCounters",
+      "getAlarmHistory",
+      "getRegenerationData",
+      "getServiceTime",
+      // Analytics functions
+      "getTotalOperatingHours",
+      "getPowerDistribution",
+      "getServiceStatus",
+      "getUsageAnalytics",
     ];
     it("should create API methods with the correct baseURL", async () => {
       const baseURL = "https://example.com/api/";
@@ -1014,6 +1025,285 @@ describe("library", () => {
       );
 
       assert.equal(result, 240);
+    });
+  });
+
+  describe("statistics getters", () => {
+    const mockDeviceInfoWithStats = {
+      status: {
+        commands: { power: true },
+        temperatures: { board: 25, enviroment: 20 },
+        flags: { is_pellet_in_reserve: false },
+        pellet: { autonomy_time: 900 },
+        counters: { service_time: 1108 },
+      },
+      nvm: {
+        user_parameters: {
+          language: 1,
+          is_auto: false,
+          is_fahrenheit: false,
+          is_sound_active: false,
+          enviroment_1_temperature: 19,
+          enviroment_2_temperature: 20,
+          enviroment_3_temperature: 20,
+          manual_power: 1,
+          fan_1_ventilation: 3,
+          fan_2_ventilation: 0,
+          fan_3_ventilation: 0,
+          is_standby_active: false,
+          standby_waiting_time: 60,
+        },
+        total_counters: {
+          power_ons: 278,
+          p1_working_time: 833,
+          p2_working_time: 15,
+          p3_working_time: 19,
+          p4_working_time: 8,
+          p5_working_time: 17,
+        },
+        service_counters: {
+          p1_working_time: 100,
+          p2_working_time: 10,
+          p3_working_time: 5,
+          p4_working_time: 2,
+          p5_working_time: 1,
+        },
+        alarms_log: {
+          number: 2,
+          index: 2,
+          alarms: [
+            { type: 3, timestamp: 1700000000 },
+            { type: 21, timestamp: 1700001000 },
+          ],
+        },
+        regeneration: {
+          time: 0,
+          last_intervention: 1577836800,
+          daylight_time_flag: 0,
+          blackout_counter: 43,
+          airkare_working_hours_counter: 0,
+        },
+      },
+    };
+
+    it("should get total counters", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfoWithStats));
+      const api = configure(API_URL);
+      const result = await api.getTotalCounters(
+        expectedToken,
+        "00:11:22:33:44:55",
+      );
+      assert.deepEqual(result, mockDeviceInfoWithStats.nvm.total_counters);
+    });
+
+    it("should get service counters", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfoWithStats));
+      const api = configure(API_URL);
+      const result = await api.getServiceCounters(
+        expectedToken,
+        "00:11:22:33:44:55",
+      );
+      assert.deepEqual(result, mockDeviceInfoWithStats.nvm.service_counters);
+    });
+
+    it("should get alarm history", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfoWithStats));
+      const api = configure(API_URL);
+      const result = await api.getAlarmHistory(
+        expectedToken,
+        "00:11:22:33:44:55",
+      );
+      assert.deepEqual(result, mockDeviceInfoWithStats.nvm.alarms_log);
+    });
+
+    it("should get regeneration data", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfoWithStats));
+      const api = configure(API_URL);
+      const result = await api.getRegenerationData(
+        expectedToken,
+        "00:11:22:33:44:55",
+      );
+      assert.deepEqual(result, mockDeviceInfoWithStats.nvm.regeneration);
+    });
+
+    it("should get service time", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfoWithStats));
+      const api = configure(API_URL);
+      const result = await api.getServiceTime(
+        expectedToken,
+        "00:11:22:33:44:55",
+      );
+      assert.equal(result, 1108);
+    });
+  });
+
+  describe("analytics functions", () => {
+    const mockDeviceInfoWithStats = {
+      status: {
+        commands: { power: true },
+        temperatures: { board: 25, enviroment: 20 },
+        flags: { is_pellet_in_reserve: false },
+        pellet: { autonomy_time: 900 },
+        counters: { service_time: 1108 },
+      },
+      nvm: {
+        user_parameters: {
+          language: 1,
+          is_auto: false,
+          is_fahrenheit: false,
+          is_sound_active: false,
+          enviroment_1_temperature: 19,
+          enviroment_2_temperature: 20,
+          enviroment_3_temperature: 20,
+          manual_power: 1,
+          fan_1_ventilation: 3,
+          fan_2_ventilation: 0,
+          fan_3_ventilation: 0,
+          is_standby_active: false,
+          standby_waiting_time: 60,
+        },
+        total_counters: {
+          power_ons: 278,
+          p1_working_time: 833,
+          p2_working_time: 15,
+          p3_working_time: 19,
+          p4_working_time: 8,
+          p5_working_time: 17,
+        },
+        service_counters: {
+          p1_working_time: 100,
+          p2_working_time: 10,
+          p3_working_time: 5,
+          p4_working_time: 2,
+          p5_working_time: 1,
+        },
+        alarms_log: {
+          number: 2,
+          index: 2,
+          alarms: [
+            { type: 3, timestamp: 1700000000 },
+            { type: 21, timestamp: 1700001000 },
+          ],
+        },
+        regeneration: {
+          time: 0,
+          last_intervention: 1577836800,
+          daylight_time_flag: 0,
+          blackout_counter: 43,
+          airkare_working_hours_counter: 0,
+        },
+      },
+    };
+
+    it("should calculate total operating hours", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfoWithStats));
+      const api = configure(API_URL);
+      const result = await api.getTotalOperatingHours(
+        expectedToken,
+        "00:11:22:33:44:55",
+      );
+      // 833 + 15 + 19 + 8 + 17 = 892
+      assert.equal(result, 892);
+    });
+
+    it("should calculate power distribution percentages", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfoWithStats));
+      const api = configure(API_URL);
+      const result = await api.getPowerDistribution(
+        expectedToken,
+        "00:11:22:33:44:55",
+      );
+      // Total: 892 hours
+      assert.ok(result.p1 > 90); // 833/892 = 93.4%
+      assert.ok(result.p2 < 5); // 15/892 = 1.7%
+      // Sum should be ~100%
+      const sum = result.p1 + result.p2 + result.p3 + result.p4 + result.p5;
+      assert.ok(Math.abs(sum - 100) < 0.1);
+    });
+
+    it("should handle zero operating hours in power distribution", async () => {
+      const zeroHoursInfo = {
+        ...mockDeviceInfoWithStats,
+        nvm: {
+          ...mockDeviceInfoWithStats.nvm,
+          total_counters: {
+            power_ons: 0,
+            p1_working_time: 0,
+            p2_working_time: 0,
+            p3_working_time: 0,
+            p4_working_time: 0,
+            p5_working_time: 0,
+          },
+        },
+      };
+      fetchStub.resolves(mockResponse(zeroHoursInfo));
+      const api = configure(API_URL);
+      const result = await api.getPowerDistribution(
+        expectedToken,
+        "00:11:22:33:44:55",
+      );
+      assert.deepEqual(result, { p1: 0, p2: 0, p3: 0, p4: 0, p5: 0 });
+    });
+
+    it("should calculate service status", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfoWithStats));
+      const api = configure(API_URL);
+      const result = await api.getServiceStatus(
+        expectedToken,
+        "00:11:22:33:44:55",
+      );
+      assert.equal(result.totalServiceHours, 1108);
+      // 100 + 10 + 5 + 2 + 1 = 118 hours since service
+      assert.equal(result.hoursSinceService, 118);
+      assert.equal(result.isServiceDue, false); // 118 < 2000
+    });
+
+    it("should indicate service is due when threshold exceeded", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfoWithStats));
+      const api = configure(API_URL);
+      // Use threshold of 100 hours
+      const result = await api.getServiceStatus(
+        expectedToken,
+        "00:11:22:33:44:55",
+        100,
+      );
+      assert.equal(result.isServiceDue, true); // 118 >= 100
+    });
+
+    it("should get comprehensive usage analytics", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfoWithStats));
+      const api = configure(API_URL);
+      const result = await api.getUsageAnalytics(
+        expectedToken,
+        "00:11:22:33:44:55",
+      );
+
+      assert.equal(result.totalPowerOns, 278);
+      assert.equal(result.totalOperatingHours, 892);
+      assert.equal(result.blackoutCount, 43);
+      assert.equal(result.alarmCount, 2);
+      assert.ok(result.lastMaintenanceDate instanceof Date);
+      assert.equal(result.serviceStatus.isServiceDue, false);
+    });
+
+    it("should handle null lastMaintenanceDate when timestamp is 0", async () => {
+      const noMaintenanceInfo = {
+        ...mockDeviceInfoWithStats,
+        nvm: {
+          ...mockDeviceInfoWithStats.nvm,
+          regeneration: {
+            ...mockDeviceInfoWithStats.nvm.regeneration,
+            last_intervention: 0,
+          },
+        },
+      };
+      fetchStub.resolves(mockResponse(noMaintenanceInfo));
+      const api = configure(API_URL);
+      const result = await api.getUsageAnalytics(
+        expectedToken,
+        "00:11:22:33:44:55",
+      );
+      assert.equal(result.lastMaintenanceDate, null);
     });
   });
 

@@ -6,11 +6,18 @@ import { cognitoUserPoolsTokenProvider } from "aws-amplify/auth/cognito";
 import { processResponse } from "./buffer-utils";
 import { API_URL } from "./constants";
 import {
+  AlarmsLogType,
   DeviceAssociationBody,
   DeviceAssociationResponse,
   DeviceInfoRawType,
   DeviceInfoType,
   EditDeviceAssociationBody,
+  PowerDistributionType,
+  RegenerationDataType,
+  ServiceCountersType,
+  ServiceStatusType,
+  TotalCountersType,
+  UsageAnalyticsType,
 } from "./types";
 
 /**
@@ -624,6 +631,246 @@ const getPelletAutonomyTime =
     return info.status.pellet.autonomy_time;
   };
 
+const getTotalCounters =
+  (baseURL: string) =>
+  /**
+   * Retrieves lifetime operating counters.
+   * Includes power-on count and runtime hours per power level.
+   * These counters are never reset.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<TotalCountersType>} - Lifetime operating statistics.
+   */
+  async (jwtToken: string, macAddress: string): Promise<TotalCountersType> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.nvm.total_counters;
+  };
+
+const getServiceCounters =
+  (baseURL: string) =>
+  /**
+   * Retrieves service counters (runtime since last maintenance).
+   * These counters track hours per power level since last service reset.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<ServiceCountersType>} - Service tracking statistics.
+   */
+  async (
+    jwtToken: string,
+    macAddress: string,
+  ): Promise<ServiceCountersType> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.nvm.service_counters;
+  };
+
+const getAlarmHistory =
+  (baseURL: string) =>
+  /**
+   * Retrieves the alarm history log.
+   * Contains a circular buffer of recent alarms with timestamps.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<AlarmsLogType>} - Alarm history log.
+   */
+  async (jwtToken: string, macAddress: string): Promise<AlarmsLogType> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.nvm.alarms_log;
+  };
+
+const getRegenerationData =
+  (baseURL: string) =>
+  /**
+   * Retrieves regeneration and maintenance data.
+   * Includes blackout counter and last intervention timestamp.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<RegenerationDataType>} - Maintenance tracking data.
+   */
+  async (
+    jwtToken: string,
+    macAddress: string,
+  ): Promise<RegenerationDataType> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.nvm.regeneration;
+  };
+
+const getServiceTime =
+  (baseURL: string) =>
+  /**
+   * Retrieves the total service time in hours.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - Total service hours.
+   */
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.status.counters.service_time;
+  };
+
+/**
+ * Default service threshold in hours (from OEM parameters).
+ * Most devices use 2000 hours.
+ */
+const DEFAULT_SERVICE_THRESHOLD = 2000;
+
+const getTotalOperatingHours =
+  (baseURL: string) =>
+  /**
+   * Calculates total operating hours across all power levels.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - Total operating hours.
+   */
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const counters = await getTotalCounters(baseURL)(jwtToken, macAddress);
+    return (
+      counters.p1_working_time +
+      counters.p2_working_time +
+      counters.p3_working_time +
+      counters.p4_working_time +
+      counters.p5_working_time
+    );
+  };
+
+const getPowerDistribution =
+  (baseURL: string) =>
+  /**
+   * Calculates power level usage distribution as percentages.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<PowerDistributionType>} - Percentage time at each power level.
+   */
+  async (
+    jwtToken: string,
+    macAddress: string,
+  ): Promise<PowerDistributionType> => {
+    const counters = await getTotalCounters(baseURL)(jwtToken, macAddress);
+    const total =
+      counters.p1_working_time +
+      counters.p2_working_time +
+      counters.p3_working_time +
+      counters.p4_working_time +
+      counters.p5_working_time;
+
+    if (total === 0) {
+      return { p1: 0, p2: 0, p3: 0, p4: 0, p5: 0 };
+    }
+
+    return {
+      p1: (counters.p1_working_time / total) * 100,
+      p2: (counters.p2_working_time / total) * 100,
+      p3: (counters.p3_working_time / total) * 100,
+      p4: (counters.p4_working_time / total) * 100,
+      p5: (counters.p5_working_time / total) * 100,
+    };
+  };
+
+const getServiceStatus =
+  (baseURL: string) =>
+  /**
+   * Calculates service status including whether maintenance is due.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number} [thresholdHours=2000] - Service threshold in hours.
+   * @returns {Promise<ServiceStatusType>} - Service status with computed fields.
+   */
+  async (
+    jwtToken: string,
+    macAddress: string,
+    thresholdHours: number = DEFAULT_SERVICE_THRESHOLD,
+  ): Promise<ServiceStatusType> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    const serviceCounters = info.nvm.service_counters;
+    const hoursSinceService =
+      serviceCounters.p1_working_time +
+      serviceCounters.p2_working_time +
+      serviceCounters.p3_working_time +
+      serviceCounters.p4_working_time +
+      serviceCounters.p5_working_time;
+
+    return {
+      totalServiceHours: info.status.counters.service_time,
+      hoursSinceService,
+      serviceThresholdHours: thresholdHours,
+      isServiceDue: hoursSinceService >= thresholdHours,
+    };
+  };
+
+const getUsageAnalytics =
+  (baseURL: string) =>
+  /**
+   * Retrieves comprehensive usage analytics in a single call.
+   * Combines multiple statistics into a unified analytics object.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number} [serviceThreshold=2000] - Service threshold in hours.
+   * @returns {Promise<UsageAnalyticsType>} - Comprehensive usage analytics.
+   */
+  async (
+    jwtToken: string,
+    macAddress: string,
+    serviceThreshold: number = DEFAULT_SERVICE_THRESHOLD,
+  ): Promise<UsageAnalyticsType> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+
+    const totalCounters = info.nvm.total_counters;
+    const serviceCounters = info.nvm.service_counters;
+    const regeneration = info.nvm.regeneration;
+    const alarmsLog = info.nvm.alarms_log;
+
+    const totalOperatingHours =
+      totalCounters.p1_working_time +
+      totalCounters.p2_working_time +
+      totalCounters.p3_working_time +
+      totalCounters.p4_working_time +
+      totalCounters.p5_working_time;
+
+    const hoursSinceService =
+      serviceCounters.p1_working_time +
+      serviceCounters.p2_working_time +
+      serviceCounters.p3_working_time +
+      serviceCounters.p4_working_time +
+      serviceCounters.p5_working_time;
+
+    const powerDistribution: PowerDistributionType =
+      totalOperatingHours === 0
+        ? { p1: 0, p2: 0, p3: 0, p4: 0, p5: 0 }
+        : {
+            p1: (totalCounters.p1_working_time / totalOperatingHours) * 100,
+            p2: (totalCounters.p2_working_time / totalOperatingHours) * 100,
+            p3: (totalCounters.p3_working_time / totalOperatingHours) * 100,
+            p4: (totalCounters.p4_working_time / totalOperatingHours) * 100,
+            p5: (totalCounters.p5_working_time / totalOperatingHours) * 100,
+          };
+
+    return {
+      totalPowerOns: totalCounters.power_ons,
+      totalOperatingHours,
+      powerDistribution,
+      serviceStatus: {
+        totalServiceHours: info.status.counters.service_time,
+        hoursSinceService,
+        serviceThresholdHours: serviceThreshold,
+        isServiceDue: hoursSinceService >= serviceThreshold,
+      },
+      blackoutCount: regeneration.blackout_counter,
+      lastMaintenanceDate:
+        regeneration.last_intervention > 0
+          ? new Date(regeneration.last_intervention * 1000)
+          : null,
+      alarmCount: alarmsLog.number,
+    };
+  };
+
 const registerDevice =
   (baseURL: string) =>
   /**
@@ -748,6 +995,17 @@ const configure = (baseURL: string = API_URL) => ({
   getLanguage: getLanguage(baseURL),
   getPelletInReserve: getPelletInReserve(baseURL),
   getPelletAutonomyTime: getPelletAutonomyTime(baseURL),
+  // Statistics getters
+  getTotalCounters: getTotalCounters(baseURL),
+  getServiceCounters: getServiceCounters(baseURL),
+  getAlarmHistory: getAlarmHistory(baseURL),
+  getRegenerationData: getRegenerationData(baseURL),
+  getServiceTime: getServiceTime(baseURL),
+  // Analytics functions
+  getTotalOperatingHours: getTotalOperatingHours(baseURL),
+  getPowerDistribution: getPowerDistribution(baseURL),
+  getServiceStatus: getServiceStatus(baseURL),
+  getUsageAnalytics: getUsageAnalytics(baseURL),
 });
 
 export {

@@ -10,6 +10,8 @@ export {
   serialNumberToHex,
 } from "./serial-utils";
 export {
+  AlarmEntryType,
+  AlarmsLogType,
   BufferEncodedType,
   CommandsType,
   DeviceAssociationBody,
@@ -18,10 +20,18 @@ export {
   DeviceInfoType,
   DiscoveredDevice,
   EditDeviceAssociationBody,
+  PowerDistributionType,
+  RegenerationDataType,
+  ServiceCountersType,
+  ServiceStatusType,
+  StatusCountersType,
   StatusType,
   TemperaturesType,
+  TotalCountersType,
+  UsageAnalyticsType,
   UserParametersType,
 } from "./types";
+export { AlarmCode, AlarmDescriptions } from "./types";
 
 export const {
   deviceInfo,

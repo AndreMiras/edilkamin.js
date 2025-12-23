@@ -6,6 +6,7 @@ import { version } from "../package.json";
 import { NEW_API_URL, OLD_API_URL } from "./constants";
 import { configure, configureAmplify, getSession, signIn } from "./library";
 import { clearSession, createFileStorage } from "./token-storage";
+import { AlarmCode, AlarmDescriptions } from "./types";
 
 const promptPassword = (): Promise<string> => {
   const rl = readline.createInterface({
@@ -335,6 +336,117 @@ const createProgram = (): Command => {
         jwtToken: string,
         mac: string,
       ) => api.getPelletAutonomyTime(jwtToken, mac),
+    },
+    // Statistics getters
+    {
+      commandName: "getTotalCounters",
+      description:
+        "Get lifetime operating counters (power-ons, runtime by power level)",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getTotalCounters(jwtToken, mac),
+    },
+    {
+      commandName: "getServiceCounters",
+      description: "Get service counters (runtime since last maintenance)",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getServiceCounters(jwtToken, mac),
+    },
+    {
+      commandName: "getRegenerationData",
+      description: "Get regeneration and maintenance data",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getRegenerationData(jwtToken, mac),
+    },
+    {
+      commandName: "getServiceTime",
+      description: "Get total service time in hours",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getServiceTime(jwtToken, mac),
+    },
+    // Analytics getters
+    {
+      commandName: "getTotalOperatingHours",
+      description: "Get total operating hours across all power levels",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getTotalOperatingHours(jwtToken, mac),
+    },
+    {
+      commandName: "getPowerDistribution",
+      description: "Get power level usage distribution as percentages",
+      getter: async (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => {
+        const result = await api.getPowerDistribution(jwtToken, mac);
+        return {
+          p1: `${result.p1.toFixed(1)}%`,
+          p2: `${result.p2.toFixed(1)}%`,
+          p3: `${result.p3.toFixed(1)}%`,
+          p4: `${result.p4.toFixed(1)}%`,
+          p5: `${result.p5.toFixed(1)}%`,
+        };
+      },
+    },
+    {
+      commandName: "getServiceStatus",
+      description: "Get service status including whether maintenance is due",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getServiceStatus(jwtToken, mac),
+    },
+    {
+      commandName: "getUsageAnalytics",
+      description: "Get comprehensive usage analytics in single response",
+      getter: async (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => {
+        const analytics = await api.getUsageAnalytics(jwtToken, mac);
+        return {
+          lifetime: {
+            powerOnCount: analytics.totalPowerOns,
+            totalOperatingHours: analytics.totalOperatingHours,
+            blackoutCount: analytics.blackoutCount,
+          },
+          powerDistribution: {
+            p1: `${analytics.powerDistribution.p1.toFixed(1)}%`,
+            p2: `${analytics.powerDistribution.p2.toFixed(1)}%`,
+            p3: `${analytics.powerDistribution.p3.toFixed(1)}%`,
+            p4: `${analytics.powerDistribution.p4.toFixed(1)}%`,
+            p5: `${analytics.powerDistribution.p5.toFixed(1)}%`,
+          },
+          service: {
+            totalServiceHours: analytics.serviceStatus.totalServiceHours,
+            hoursSinceLastService: analytics.serviceStatus.hoursSinceService,
+            thresholdHours: analytics.serviceStatus.serviceThresholdHours,
+            isServiceDue: analytics.serviceStatus.isServiceDue,
+            lastMaintenanceDate:
+              analytics.lastMaintenanceDate?.toISOString() || "Never",
+          },
+          alarms: {
+            totalCount: analytics.alarmCount,
+          },
+        };
+      },
     },
   ].forEach(({ commandName, description, getter }) => {
     addLegacyOption(
@@ -674,6 +786,50 @@ const createProgram = (): Command => {
       value,
     );
     console.log(JSON.stringify(result, null, 2));
+  });
+
+  // Alarm history command with human-readable descriptions
+  addLegacyOption(
+    addMacOption(
+      addAuthOptions(
+        program
+          .command("getAlarmHistory")
+          .description(
+            "Get alarm history log with human-readable descriptions",
+          ),
+      ),
+    ),
+  ).action(async (options) => {
+    const { username, password, mac, legacy = false } = options;
+    const normalizedMac = mac.replace(/:/g, "");
+    const storage = createFileStorage();
+    configureAmplify(storage);
+    let jwtToken: string;
+    try {
+      jwtToken = await getSession(false, legacy);
+    } catch {
+      if (!username) {
+        throw new Error(
+          "No session found. Please provide --username to sign in.",
+        );
+      }
+      const pwd = password || (await promptPassword());
+      jwtToken = await signIn(username, pwd, legacy);
+    }
+    const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
+    const api = configure(apiUrl);
+    const result = await api.getAlarmHistory(jwtToken, normalizedMac);
+    // Format alarms with human-readable descriptions
+    const formattedAlarms = result.alarms.map((alarm) => ({
+      ...alarm,
+      typeName: AlarmCode[alarm.type] || "UNKNOWN",
+      description:
+        AlarmDescriptions[alarm.type as AlarmCode] || "Unknown alarm",
+      date: new Date(alarm.timestamp * 1000).toISOString(),
+    }));
+    console.log(
+      JSON.stringify({ ...result, alarms: formattedAlarms }, null, 2),
+    );
   });
 
   // Command: register
