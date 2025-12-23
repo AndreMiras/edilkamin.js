@@ -16,9 +16,19 @@ interface TemperaturesType {
   enviroment: number;
 }
 
+interface GeneralFlagsType {
+  is_pellet_in_reserve: boolean;
+}
+
+interface PelletAutonomyType {
+  autonomy_time: number;
+}
+
 interface StatusType {
   commands: CommandsType;
   temperatures: TemperaturesType;
+  flags: GeneralFlagsType;
+  pellet: PelletAutonomyType;
 }
 
 interface UserParametersType {
@@ -113,6 +123,8 @@ export type {
   DeviceInfoType,
   DiscoveredDevice,
   EditDeviceAssociationBody,
+  GeneralFlagsType,
+  PelletAutonomyType,
   StatusType,
   TemperaturesType,
   UserParametersType,

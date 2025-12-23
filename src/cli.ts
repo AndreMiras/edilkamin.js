@@ -317,6 +317,25 @@ const createProgram = (): Command => {
         mac: string,
       ) => api.getLanguage(jwtToken, mac),
     },
+    {
+      commandName: "getPelletInReserve",
+      description:
+        "Retrieve pellet reserve status (true=low/reserve, false=ok)",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getPelletInReserve(jwtToken, mac),
+    },
+    {
+      commandName: "getPelletAutonomyTime",
+      description: "Retrieve estimated pellet autonomy time",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getPelletAutonomyTime(jwtToken, mac),
+    },
   ].forEach(({ commandName, description, getter }) => {
     addLegacyOption(
       addMacOption(

@@ -634,6 +634,36 @@ const getLanguage =
     return info.nvm.user_parameters.language;
   };
 
+const getPelletInReserve =
+  (baseURL: string) =>
+  /**
+   * Retrieves the pellet reserve status.
+   * Returns true if pellet level is low (in reserve), false if pellet level is ok.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<boolean>} - A promise that resolves to the pellet reserve status.
+   */
+  async (jwtToken: string, macAddress: string): Promise<boolean> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.status.flags.is_pellet_in_reserve;
+  };
+
+const getPelletAutonomyTime =
+  (baseURL: string) =>
+  /**
+   * Retrieves the estimated pellet autonomy time.
+   * Represents the estimated time remaining with current pellet level.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - A promise that resolves to the autonomy time (likely in minutes or hours).
+   */
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.status.pellet.autonomy_time;
+  };
+
 const registerDevice =
   (baseURL: string) =>
   /**
@@ -752,6 +782,8 @@ const configure = (baseURL: string = API_URL) => ({
   getMeasureUnit: getMeasureUnit(baseURL),
   setLanguage: setLanguage(baseURL),
   getLanguage: getLanguage(baseURL),
+  getPelletInReserve: getPelletInReserve(baseURL),
+  getPelletAutonomyTime: getPelletAutonomyTime(baseURL),
 });
 
 export {

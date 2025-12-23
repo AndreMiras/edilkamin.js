@@ -236,6 +236,8 @@ describe("library", () => {
       "getMeasureUnit",
       "setLanguage",
       "getLanguage",
+      "getPelletInReserve",
+      "getPelletAutonomyTime",
     ];
     it("should create API methods with the correct baseURL", async () => {
       const baseURL = "https://example.com/api/";
@@ -266,6 +268,12 @@ describe("library", () => {
         },
         temperatures: {
           enviroment: 19,
+        },
+        flags: {
+          is_pellet_in_reserve: false,
+        },
+        pellet: {
+          autonomy_time: 180,
         },
       },
       nvm: {
@@ -427,6 +435,18 @@ describe("library", () => {
         call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
           api.getLanguage(token, mac),
         expectedResult: 2,
+      },
+      {
+        method: "getPelletInReserve",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getPelletInReserve(token, mac),
+        expectedResult: false,
+      },
+      {
+        method: "getPelletAutonomyTime",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getPelletAutonomyTime(token, mac),
+        expectedResult: 180,
       },
     ];
     getterTests.forEach(({ method, call, expectedResult }) => {
@@ -944,6 +964,51 @@ describe("library", () => {
       );
 
       assert.equal(result, 22);
+    });
+
+    it("should work with getPelletInReserve on compressed response", async () => {
+      const statusData = {
+        commands: { power: true },
+        temperatures: { enviroment: 19 },
+        flags: { is_pellet_in_reserve: true },
+        pellet: { autonomy_time: 120 },
+      };
+      const mockResponseData = {
+        status: createGzippedBuffer(statusData),
+        nvm: { user_parameters: { enviroment_1_temperature: 22 } },
+      };
+
+      fetchStub.resolves(mockResponse(mockResponseData));
+      const api = configure("https://example.com/api/");
+
+      const result = await api.getPelletInReserve(
+        expectedToken,
+        "mockMacAddress",
+      );
+
+      assert.equal(result, true);
+    });
+
+    it("should work with getPelletAutonomyTime on response", async () => {
+      const mockResponseData = {
+        status: {
+          commands: { power: true },
+          temperatures: { enviroment: 19 },
+          flags: { is_pellet_in_reserve: false },
+          pellet: { autonomy_time: 240 },
+        },
+        nvm: { user_parameters: { enviroment_1_temperature: 22 } },
+      };
+
+      fetchStub.resolves(mockResponse(mockResponseData));
+      const api = configure("https://example.com/api/");
+
+      const result = await api.getPelletAutonomyTime(
+        expectedToken,
+        "mockMacAddress",
+      );
+
+      assert.equal(result, 240);
     });
   });
 
