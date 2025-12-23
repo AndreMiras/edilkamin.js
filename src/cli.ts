@@ -219,13 +219,13 @@ const createProgram = (): Command => {
       ) => api.getEnvironmentTemperature(jwtToken, mac),
     },
     {
-      commandName: "getTargetTemperature",
-      description: "Retrieve target temperature",
+      commandName: "getEnvironment1Temperature",
+      description: "Retrieve Environment 1 target temperature",
       getter: (
         api: ReturnType<typeof configure>,
         jwtToken: string,
         mac: string,
-      ) => api.getTargetTemperature(jwtToken, mac),
+      ) => api.getEnvironment1Temperature(jwtToken, mac),
     },
     {
       commandName: "getFan1Speed",
@@ -366,14 +366,14 @@ const createProgram = (): Command => {
       ) => api.setPowerLevel(jwtToken, mac, value),
     },
     {
-      commandName: "setTargetTemperature",
-      description: "Set the target temperature (degree celsius) for a device",
+      commandName: "setEnvironment1Temperature",
+      description: "Set Environment 1 target temperature (degrees Celsius)",
       setter: (
         api: ReturnType<typeof configure>,
         jwtToken: string,
         mac: string,
         value: number,
-      ) => api.setTargetTemperature(jwtToken, mac, value),
+      ) => api.setEnvironment1Temperature(jwtToken, mac, value),
     },
     {
       commandName: "setFan1Speed",
@@ -504,6 +504,176 @@ const createProgram = (): Command => {
         ).requiredOption("-v, --value <number>", "Value to set", parseFloat),
       ),
     ).action((options) => executeSetter(options, setter));
+  });
+
+  // Indexed getter commands (require --index parameter)
+  addLegacyOption(
+    addMacOption(
+      addAuthOptions(
+        program
+          .command("getFanSpeed")
+          .description("Retrieve fan speed by index (1-3)"),
+      ).requiredOption(
+        "-i, --index <number>",
+        "Fan index (1, 2, or 3)",
+        parseInt,
+      ),
+    ),
+  ).action(async (options) => {
+    const { username, password, mac, index, legacy = false } = options;
+    const normalizedMac = mac.replace(/:/g, "");
+    const storage = createFileStorage();
+    configureAmplify(storage);
+    let jwtToken: string;
+    try {
+      jwtToken = await getSession(false, legacy);
+    } catch {
+      if (!username) {
+        throw new Error(
+          "No session found. Please provide --username to sign in.",
+        );
+      }
+      const pwd = password || (await promptPassword());
+      jwtToken = await signIn(username, pwd, legacy);
+    }
+    const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
+    const api = configure(apiUrl);
+    const result = await api.getFanSpeed(
+      jwtToken,
+      normalizedMac,
+      index as 1 | 2 | 3,
+    );
+    console.log(JSON.stringify(result, null, 2));
+  });
+
+  addLegacyOption(
+    addMacOption(
+      addAuthOptions(
+        program
+          .command("getTargetTemperature")
+          .description(
+            "Retrieve target temperature by environment index (1-3)",
+          ),
+      ).requiredOption(
+        "-i, --index <number>",
+        "Environment index (1, 2, or 3)",
+        parseInt,
+      ),
+    ),
+  ).action(async (options) => {
+    const { username, password, mac, index, legacy = false } = options;
+    const normalizedMac = mac.replace(/:/g, "");
+    const storage = createFileStorage();
+    configureAmplify(storage);
+    let jwtToken: string;
+    try {
+      jwtToken = await getSession(false, legacy);
+    } catch {
+      if (!username) {
+        throw new Error(
+          "No session found. Please provide --username to sign in.",
+        );
+      }
+      const pwd = password || (await promptPassword());
+      jwtToken = await signIn(username, pwd, legacy);
+    }
+    const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
+    const api = configure(apiUrl);
+    const result = await api.getTargetTemperature(
+      jwtToken,
+      normalizedMac,
+      index as 1 | 2 | 3,
+    );
+    console.log(JSON.stringify(result, null, 2));
+  });
+
+  // Indexed setter commands (require --index and --value parameters)
+  addLegacyOption(
+    addMacOption(
+      addAuthOptions(
+        program
+          .command("setFanSpeed")
+          .description("Set fan speed by index (1-3)"),
+      )
+        .requiredOption(
+          "-i, --index <number>",
+          "Fan index (1, 2, or 3)",
+          parseInt,
+        )
+        .requiredOption("-v, --value <number>", "Fan speed (0-5)", parseFloat),
+    ),
+  ).action(async (options) => {
+    const { username, password, mac, index, value, legacy = false } = options;
+    const normalizedMac = mac.replace(/:/g, "");
+    const storage = createFileStorage();
+    configureAmplify(storage);
+    let jwtToken: string;
+    try {
+      jwtToken = await getSession(false, legacy);
+    } catch {
+      if (!username) {
+        throw new Error(
+          "No session found. Please provide --username to sign in.",
+        );
+      }
+      const pwd = password || (await promptPassword());
+      jwtToken = await signIn(username, pwd, legacy);
+    }
+    const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
+    const api = configure(apiUrl);
+    const result = await api.setFanSpeed(
+      jwtToken,
+      normalizedMac,
+      index as 1 | 2 | 3,
+      value,
+    );
+    console.log(JSON.stringify(result, null, 2));
+  });
+
+  addLegacyOption(
+    addMacOption(
+      addAuthOptions(
+        program
+          .command("setTargetTemperature")
+          .description("Set target temperature by environment index (1-3)"),
+      )
+        .requiredOption(
+          "-i, --index <number>",
+          "Environment index (1, 2, or 3)",
+          parseInt,
+        )
+        .requiredOption(
+          "-v, --value <number>",
+          "Temperature in degrees Celsius",
+          parseFloat,
+        ),
+    ),
+  ).action(async (options) => {
+    const { username, password, mac, index, value, legacy = false } = options;
+    const normalizedMac = mac.replace(/:/g, "");
+    const storage = createFileStorage();
+    configureAmplify(storage);
+    let jwtToken: string;
+    try {
+      jwtToken = await getSession(false, legacy);
+    } catch {
+      if (!username) {
+        throw new Error(
+          "No session found. Please provide --username to sign in.",
+        );
+      }
+      const pwd = password || (await promptPassword());
+      jwtToken = await signIn(username, pwd, legacy);
+    }
+    const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
+    const api = configure(apiUrl);
+    const result = await api.setTargetTemperature(
+      jwtToken,
+      normalizedMac,
+      index as 1 | 2 | 3,
+      value,
+    );
+    console.log(JSON.stringify(result, null, 2));
   });
 
   // Command: register

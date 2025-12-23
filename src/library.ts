@@ -236,95 +236,71 @@ const getPowerLevel =
     return info.nvm.user_parameters.manual_power;
   };
 
-const setFan1Speed =
+const setFanSpeed =
   (baseURL: string) =>
   /**
-   * Sets the speed of fan 1.
+   * Sets the speed of a fan by index.
    *
    * @param {string} jwtToken - The JWT token for authentication.
    * @param {string} macAddress - The MAC address of the device.
+   * @param {1 | 2 | 3} fanIndex - The fan index (1, 2, or 3).
    * @param {number} speed - The fan speed (0-5, 0=auto on some models).
    * @returns {Promise<unknown>} - A promise that resolves to the command response.
    */
-  (jwtToken: string, macAddress: string, speed: number) =>
+  (jwtToken: string, macAddress: string, fanIndex: 1 | 2 | 3, speed: number) =>
     mqttCommand(baseURL)(jwtToken, macAddress, {
-      name: "fan_1_speed",
+      name: `fan_${fanIndex}_speed`,
       value: speed,
     });
+
+const getFanSpeed =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current speed of a fan by index.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {1 | 2 | 3} fanIndex - The fan index (1, 2, or 3).
+   * @returns {Promise<number>} - A promise that resolves to the fan speed.
+   */
+  async (
+    jwtToken: string,
+    macAddress: string,
+    fanIndex: 1 | 2 | 3,
+  ): Promise<number> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    const fields: Record<1 | 2 | 3, number> = {
+      1: info.nvm.user_parameters.fan_1_ventilation,
+      2: info.nvm.user_parameters.fan_2_ventilation,
+      3: info.nvm.user_parameters.fan_3_ventilation,
+    };
+    return fields[fanIndex];
+  };
+
+// Fan speed aliases for convenience
+const setFan1Speed =
+  (baseURL: string) => (jwtToken: string, macAddress: string, speed: number) =>
+    setFanSpeed(baseURL)(jwtToken, macAddress, 1, speed);
 
 const setFan2Speed =
-  (baseURL: string) =>
-  /**
-   * Sets the speed of fan 2.
-   *
-   * @param {string} jwtToken - The JWT token for authentication.
-   * @param {string} macAddress - The MAC address of the device.
-   * @param {number} speed - The fan speed (0-5, 0=auto on some models).
-   * @returns {Promise<unknown>} - A promise that resolves to the command response.
-   */
-  (jwtToken: string, macAddress: string, speed: number) =>
-    mqttCommand(baseURL)(jwtToken, macAddress, {
-      name: "fan_2_speed",
-      value: speed,
-    });
+  (baseURL: string) => (jwtToken: string, macAddress: string, speed: number) =>
+    setFanSpeed(baseURL)(jwtToken, macAddress, 2, speed);
 
 const setFan3Speed =
-  (baseURL: string) =>
-  /**
-   * Sets the speed of fan 3.
-   *
-   * @param {string} jwtToken - The JWT token for authentication.
-   * @param {string} macAddress - The MAC address of the device.
-   * @param {number} speed - The fan speed (0-5, 0=auto on some models).
-   * @returns {Promise<unknown>} - A promise that resolves to the command response.
-   */
-  (jwtToken: string, macAddress: string, speed: number) =>
-    mqttCommand(baseURL)(jwtToken, macAddress, {
-      name: "fan_3_speed",
-      value: speed,
-    });
+  (baseURL: string) => (jwtToken: string, macAddress: string, speed: number) =>
+    setFanSpeed(baseURL)(jwtToken, macAddress, 3, speed);
 
 const getFan1Speed =
-  (baseURL: string) =>
-  /**
-   * Retrieves the current speed of fan 1.
-   *
-   * @param {string} jwtToken - The JWT token for authentication.
-   * @param {string} macAddress - The MAC address of the device.
-   * @returns {Promise<number>} - A promise that resolves to the fan speed.
-   */
-  async (jwtToken: string, macAddress: string): Promise<number> => {
-    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
-    return info.nvm.user_parameters.fan_1_ventilation;
-  };
+  (baseURL: string) => (jwtToken: string, macAddress: string) =>
+    getFanSpeed(baseURL)(jwtToken, macAddress, 1);
 
 const getFan2Speed =
-  (baseURL: string) =>
-  /**
-   * Retrieves the current speed of fan 2.
-   *
-   * @param {string} jwtToken - The JWT token for authentication.
-   * @param {string} macAddress - The MAC address of the device.
-   * @returns {Promise<number>} - A promise that resolves to the fan speed.
-   */
-  async (jwtToken: string, macAddress: string): Promise<number> => {
-    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
-    return info.nvm.user_parameters.fan_2_ventilation;
-  };
+  (baseURL: string) => (jwtToken: string, macAddress: string) =>
+    getFanSpeed(baseURL)(jwtToken, macAddress, 2);
 
 const getFan3Speed =
-  (baseURL: string) =>
-  /**
-   * Retrieves the current speed of fan 3.
-   *
-   * @param {string} jwtToken - The JWT token for authentication.
-   * @param {string} macAddress - The MAC address of the device.
-   * @returns {Promise<number>} - A promise that resolves to the fan speed.
-   */
-  async (jwtToken: string, macAddress: string): Promise<number> => {
-    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
-    return info.nvm.user_parameters.fan_3_ventilation;
-  };
+  (baseURL: string) => (jwtToken: string, macAddress: string) =>
+    getFanSpeed(baseURL)(jwtToken, macAddress, 3);
 
 const setAirkare =
   (baseURL: string) =>
@@ -479,92 +455,76 @@ const getEnvironmentTemperature =
 const getTargetTemperature =
   (baseURL: string) =>
   /**
-   * Retrieves the target temperature value set on the device.
+   * Retrieves the target temperature for an environment zone.
    *
    * @param {string} jwtToken - The JWT token for authentication.
    * @param {string} macAddress - The MAC address of the device.
-   * @returns {Promise<number>} - A promise that resolves to the target temperature (degree celsius).
+   * @param {1 | 2 | 3} envIndex - The environment zone index (1, 2, or 3).
+   * @returns {Promise<number>} - A promise that resolves to the target temperature (degrees Celsius).
    */
-  async (jwtToken: string, macAddress: string): Promise<number> => {
+  async (
+    jwtToken: string,
+    macAddress: string,
+    envIndex: 1 | 2 | 3,
+  ): Promise<number> => {
     const info = await deviceInfo(baseURL)(jwtToken, macAddress);
-    return info.nvm.user_parameters.enviroment_1_temperature;
+    const fields: Record<1 | 2 | 3, number> = {
+      1: info.nvm.user_parameters.enviroment_1_temperature,
+      2: info.nvm.user_parameters.enviroment_2_temperature,
+      3: info.nvm.user_parameters.enviroment_3_temperature,
+    };
+    return fields[envIndex];
   };
 
 const setTargetTemperature =
   (baseURL: string) =>
   /**
-   * Sends a command to set the target temperature (degree celsius) of a device.
+   * Sets the target temperature for an environment zone.
    *
    * @param {string} jwtToken - The JWT token for authentication.
    * @param {string} macAddress - The MAC address of the device.
-   * @param {number} temperature - The desired target temperature (degree celsius).
-   * @returns {Promise<string>} - A promise that resolves to the command response.
+   * @param {1 | 2 | 3} envIndex - The environment zone index (1, 2, or 3).
+   * @param {number} temperature - The desired target temperature (degrees Celsius).
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
    */
-  (jwtToken: string, macAddress: string, temperature: number) =>
+  (
+    jwtToken: string,
+    macAddress: string,
+    envIndex: 1 | 2 | 3,
+    temperature: number,
+  ) =>
     mqttCommand(baseURL)(jwtToken, macAddress, {
-      name: "enviroment_1_temperature",
+      name: `enviroment_${envIndex}_temperature`,
       value: temperature,
     });
+
+// Environment temperature aliases for convenience
+const setEnvironment1Temperature =
+  (baseURL: string) =>
+  (jwtToken: string, macAddress: string, temperature: number) =>
+    setTargetTemperature(baseURL)(jwtToken, macAddress, 1, temperature);
 
 const setEnvironment2Temperature =
   (baseURL: string) =>
-  /**
-   * Sets the target temperature for Environment 2 zone.
-   *
-   * @param {string} jwtToken - The JWT token for authentication.
-   * @param {string} macAddress - The MAC address of the device.
-   * @param {number} temperature - The target temperature in degrees Celsius.
-   * @returns {Promise<unknown>} - A promise that resolves to the command response.
-   */
   (jwtToken: string, macAddress: string, temperature: number) =>
-    mqttCommand(baseURL)(jwtToken, macAddress, {
-      name: "enviroment_2_temperature",
-      value: temperature,
-    });
-
-const getEnvironment2Temperature =
-  (baseURL: string) =>
-  /**
-   * Retrieves the target temperature for Environment 2 zone.
-   *
-   * @param {string} jwtToken - The JWT token for authentication.
-   * @param {string} macAddress - The MAC address of the device.
-   * @returns {Promise<number>} - A promise that resolves to the temperature in degrees Celsius.
-   */
-  async (jwtToken: string, macAddress: string): Promise<number> => {
-    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
-    return info.nvm.user_parameters.enviroment_2_temperature;
-  };
+    setTargetTemperature(baseURL)(jwtToken, macAddress, 2, temperature);
 
 const setEnvironment3Temperature =
   (baseURL: string) =>
-  /**
-   * Sets the target temperature for Environment 3 zone.
-   *
-   * @param {string} jwtToken - The JWT token for authentication.
-   * @param {string} macAddress - The MAC address of the device.
-   * @param {number} temperature - The target temperature in degrees Celsius.
-   * @returns {Promise<unknown>} - A promise that resolves to the command response.
-   */
   (jwtToken: string, macAddress: string, temperature: number) =>
-    mqttCommand(baseURL)(jwtToken, macAddress, {
-      name: "enviroment_3_temperature",
-      value: temperature,
-    });
+    setTargetTemperature(baseURL)(jwtToken, macAddress, 3, temperature);
+
+const getEnvironment1Temperature =
+  (baseURL: string) => (jwtToken: string, macAddress: string) =>
+    getTargetTemperature(baseURL)(jwtToken, macAddress, 1);
+
+const getEnvironment2Temperature =
+  (baseURL: string) => (jwtToken: string, macAddress: string) =>
+    getTargetTemperature(baseURL)(jwtToken, macAddress, 2);
 
 const getEnvironment3Temperature =
-  (baseURL: string) =>
-  /**
-   * Retrieves the target temperature for Environment 3 zone.
-   *
-   * @param {string} jwtToken - The JWT token for authentication.
-   * @param {string} macAddress - The MAC address of the device.
-   * @returns {Promise<number>} - A promise that resolves to the temperature in degrees Celsius.
-   */
-  async (jwtToken: string, macAddress: string): Promise<number> => {
-    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
-    return info.nvm.user_parameters.enviroment_3_temperature;
-  };
+  (baseURL: string) => (jwtToken: string, macAddress: string) =>
+    getTargetTemperature(baseURL)(jwtToken, macAddress, 3);
 
 const setMeasureUnit =
   (baseURL: string) =>
@@ -757,6 +717,8 @@ const configure = (baseURL: string = API_URL) => ({
   getPower: getPower(baseURL),
   setPowerLevel: setPowerLevel(baseURL),
   getPowerLevel: getPowerLevel(baseURL),
+  setFanSpeed: setFanSpeed(baseURL),
+  getFanSpeed: getFanSpeed(baseURL),
   setFan1Speed: setFan1Speed(baseURL),
   setFan2Speed: setFan2Speed(baseURL),
   setFan3Speed: setFan3Speed(baseURL),
@@ -774,6 +736,8 @@ const configure = (baseURL: string = API_URL) => ({
   getEnvironmentTemperature: getEnvironmentTemperature(baseURL),
   getTargetTemperature: getTargetTemperature(baseURL),
   setTargetTemperature: setTargetTemperature(baseURL),
+  setEnvironment1Temperature: setEnvironment1Temperature(baseURL),
+  getEnvironment1Temperature: getEnvironment1Temperature(baseURL),
   setEnvironment2Temperature: setEnvironment2Temperature(baseURL),
   getEnvironment2Temperature: getEnvironment2Temperature(baseURL),
   setEnvironment3Temperature: setEnvironment3Temperature(baseURL),

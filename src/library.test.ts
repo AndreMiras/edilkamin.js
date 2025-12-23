@@ -211,6 +211,8 @@ describe("library", () => {
       "getPower",
       "setPowerLevel",
       "getPowerLevel",
+      "setFanSpeed",
+      "getFanSpeed",
       "setFan1Speed",
       "setFan2Speed",
       "setFan3Speed",
@@ -228,6 +230,8 @@ describe("library", () => {
       "getEnvironmentTemperature",
       "getTargetTemperature",
       "setTargetTemperature",
+      "setEnvironment1Temperature",
+      "getEnvironment1Temperature",
       "setEnvironment2Temperature",
       "getEnvironment2Temperature",
       "setEnvironment3Temperature",
@@ -391,7 +395,7 @@ describe("library", () => {
       {
         method: "getTargetTemperature",
         call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
-          api.getTargetTemperature(token, mac),
+          api.getTargetTemperature(token, mac, 1),
         expectedResult: 22,
       },
       {
@@ -529,7 +533,7 @@ describe("library", () => {
           token: string,
           mac: string,
           value: number,
-        ) => api.setTargetTemperature(token, mac, value),
+        ) => api.setTargetTemperature(token, mac, 1, value),
         payload: {
           name: "enviroment_1_temperature",
           value: 20,
@@ -961,6 +965,7 @@ describe("library", () => {
       const result = await api.getTargetTemperature(
         expectedToken,
         "mockMacAddress",
+        1,
       );
 
       assert.equal(result, 22);
