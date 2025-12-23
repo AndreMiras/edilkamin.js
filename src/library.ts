@@ -206,6 +206,248 @@ const setPowerOff =
   (jwtToken: string, macAddress: string) =>
     setPower(baseURL)(jwtToken, macAddress, 0);
 
+const setPowerLevel =
+  (baseURL: string) =>
+  /**
+   * Sets the manual power level of the device.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number} level - The power level (1-5).
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, level: number) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "power_level",
+      value: level,
+    });
+
+const getPowerLevel =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current manual power level of the device.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - A promise that resolves to the power level (1-5).
+   */
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.nvm.user_parameters.manual_power;
+  };
+
+const setFan1Speed =
+  (baseURL: string) =>
+  /**
+   * Sets the speed of fan 1.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number} speed - The fan speed (0-5, 0=auto on some models).
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, speed: number) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "fan_1_speed",
+      value: speed,
+    });
+
+const setFan2Speed =
+  (baseURL: string) =>
+  /**
+   * Sets the speed of fan 2.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number} speed - The fan speed (0-5, 0=auto on some models).
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, speed: number) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "fan_2_speed",
+      value: speed,
+    });
+
+const setFan3Speed =
+  (baseURL: string) =>
+  /**
+   * Sets the speed of fan 3.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number} speed - The fan speed (0-5, 0=auto on some models).
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, speed: number) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "fan_3_speed",
+      value: speed,
+    });
+
+const getFan1Speed =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current speed of fan 1.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - A promise that resolves to the fan speed.
+   */
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.nvm.user_parameters.fan_1_ventilation;
+  };
+
+const getFan2Speed =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current speed of fan 2.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - A promise that resolves to the fan speed.
+   */
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.nvm.user_parameters.fan_2_ventilation;
+  };
+
+const getFan3Speed =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current speed of fan 3.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - A promise that resolves to the fan speed.
+   */
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.nvm.user_parameters.fan_3_ventilation;
+  };
+
+const setAirkare =
+  (baseURL: string) =>
+  /**
+   * Enables or disables Airkare (air quality) mode.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {boolean} enabled - Whether to enable Airkare mode.
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, enabled: boolean) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "airkare_function",
+      value: enabled ? 1 : 0,
+    });
+
+const setRelax =
+  (baseURL: string) =>
+  /**
+   * Enables or disables Relax (comfort) mode.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {boolean} enabled - Whether to enable Relax mode.
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, enabled: boolean) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "relax_mode",
+      value: enabled,
+    });
+
+const setStandby =
+  (baseURL: string) =>
+  /**
+   * Enables or disables Standby mode.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {boolean} enabled - Whether to enable Standby mode.
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, enabled: boolean) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "standby_mode",
+      value: enabled,
+    });
+
+const getStandby =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current Standby mode status.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<boolean>} - A promise that resolves to the standby status.
+   */
+  async (jwtToken: string, macAddress: string): Promise<boolean> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.nvm.user_parameters.is_standby_active;
+  };
+
+const setStandbyTime =
+  (baseURL: string) =>
+  /**
+   * Sets the standby waiting time in minutes.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number} minutes - The standby waiting time in minutes.
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, minutes: number) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "standby_time",
+      value: minutes,
+    });
+
+const getStandbyTime =
+  (baseURL: string) =>
+  /**
+   * Retrieves the standby waiting time in minutes.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - A promise that resolves to the standby time in minutes.
+   */
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.nvm.user_parameters.standby_waiting_time;
+  };
+
+const setAuto =
+  (baseURL: string) =>
+  /**
+   * Enables or disables Auto mode for automatic temperature regulation.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {boolean} enabled - Whether to enable Auto mode.
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, enabled: boolean) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "auto_mode",
+      value: enabled,
+    });
+
+const getAuto =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current Auto mode status.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<boolean>} - A promise that resolves to the auto mode status.
+   */
+  async (jwtToken: string, macAddress: string): Promise<boolean> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.nvm.user_parameters.is_auto;
+  };
+
 const getPower =
   (baseURL: string) =>
   /**
@@ -263,6 +505,66 @@ const setTargetTemperature =
       name: "enviroment_1_temperature",
       value: temperature,
     });
+
+const setEnvironment2Temperature =
+  (baseURL: string) =>
+  /**
+   * Sets the target temperature for Environment 2 zone.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number} temperature - The target temperature in degrees Celsius.
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, temperature: number) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "enviroment_2_temperature",
+      value: temperature,
+    });
+
+const getEnvironment2Temperature =
+  (baseURL: string) =>
+  /**
+   * Retrieves the target temperature for Environment 2 zone.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - A promise that resolves to the temperature in degrees Celsius.
+   */
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.nvm.user_parameters.enviroment_2_temperature;
+  };
+
+const setEnvironment3Temperature =
+  (baseURL: string) =>
+  /**
+   * Sets the target temperature for Environment 3 zone.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number} temperature - The target temperature in degrees Celsius.
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, temperature: number) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "enviroment_3_temperature",
+      value: temperature,
+    });
+
+const getEnvironment3Temperature =
+  (baseURL: string) =>
+  /**
+   * Retrieves the target temperature for Environment 3 zone.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - A promise that resolves to the temperature in degrees Celsius.
+   */
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.nvm.user_parameters.enviroment_3_temperature;
+  };
 
 const registerDevice =
   (baseURL: string) =>
@@ -355,9 +657,29 @@ const configure = (baseURL: string = API_URL) => ({
   setPowerOff: setPowerOff(baseURL),
   setPowerOn: setPowerOn(baseURL),
   getPower: getPower(baseURL),
+  setPowerLevel: setPowerLevel(baseURL),
+  getPowerLevel: getPowerLevel(baseURL),
+  setFan1Speed: setFan1Speed(baseURL),
+  setFan2Speed: setFan2Speed(baseURL),
+  setFan3Speed: setFan3Speed(baseURL),
+  getFan1Speed: getFan1Speed(baseURL),
+  getFan2Speed: getFan2Speed(baseURL),
+  getFan3Speed: getFan3Speed(baseURL),
+  setAirkare: setAirkare(baseURL),
+  setRelax: setRelax(baseURL),
+  setStandby: setStandby(baseURL),
+  getStandby: getStandby(baseURL),
+  setStandbyTime: setStandbyTime(baseURL),
+  getStandbyTime: getStandbyTime(baseURL),
+  setAuto: setAuto(baseURL),
+  getAuto: getAuto(baseURL),
   getEnvironmentTemperature: getEnvironmentTemperature(baseURL),
   getTargetTemperature: getTargetTemperature(baseURL),
   setTargetTemperature: setTargetTemperature(baseURL),
+  setEnvironment2Temperature: setEnvironment2Temperature(baseURL),
+  getEnvironment2Temperature: getEnvironment2Temperature(baseURL),
+  setEnvironment3Temperature: setEnvironment3Temperature(baseURL),
+  getEnvironment3Temperature: getEnvironment3Temperature(baseURL),
 });
 
 export {

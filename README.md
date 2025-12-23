@@ -154,6 +154,57 @@ const wifiMac = bleToWifiMac(bleMac); // "a8032afed508"
   to the [proprietary mobile app](https://play.google.com/store/apps/details?id=com.edilkamin.stufe)
 - improving the interoperability (Nest, HomeAssistant...)
 
+## Device Control Methods
+
+The library provides comprehensive control over Edilkamin stoves:
+
+### Power Control
+
+```js
+setPowerOn(token, mac); // Turn on
+setPowerOff(token, mac); // Turn off
+setPower(token, mac, 1); // 1=on, 0=off
+getPower(token, mac); // Returns boolean
+setPowerLevel(token, mac, 3); // Set power level (1-5)
+getPowerLevel(token, mac); // Returns 1-5
+```
+
+### Fan Speed
+
+```js
+setFan1Speed(token, mac, 3); // Set fan 1 speed (0-5)
+setFan2Speed(token, mac, 3); // Set fan 2 speed (0-5)
+setFan3Speed(token, mac, 3); // Set fan 3 speed (0-5)
+getFan1Speed(token, mac); // Get fan 1 speed
+getFan2Speed(token, mac); // Get fan 2 speed
+getFan3Speed(token, mac); // Get fan 3 speed
+```
+
+### Operating Modes
+
+```js
+setAirkare(token, mac, true); // Enable/disable air quality mode
+setRelax(token, mac, true); // Enable/disable comfort mode
+setStandby(token, mac, true); // Enable/disable standby mode
+getStandby(token, mac); // Get standby status
+setStandbyTime(token, mac, 30); // Set standby timer (minutes)
+getStandbyTime(token, mac); // Get standby timer
+setAuto(token, mac, true); // Enable/disable auto mode
+getAuto(token, mac); // Get auto mode status
+```
+
+### Temperature Control
+
+```js
+setTargetTemperature(token, mac, 22); // Set zone 1 temperature
+getTargetTemperature(token, mac); // Get zone 1 target
+getEnvironmentTemperature(token, mac); // Get ambient temperature
+setEnvironment2Temperature(token, mac, 20); // Set zone 2 temperature
+getEnvironment2Temperature(token, mac); // Get zone 2 target
+setEnvironment3Temperature(token, mac, 18); // Set zone 3 temperature
+getEnvironment3Temperature(token, mac); // Get zone 3 target
+```
+
 ## Roadmap
 
 - [x] AWS Amplify/ Cognito authentication
@@ -161,7 +212,11 @@ const wifiMac = bleToWifiMac(bleMac); // "a8032afed508"
 - [x] authenticated endpoint call
 - [ ] ~list stoves~
 - [x] turn stove on/off
-- [ ] set temperature
+- [x] set temperature
+- [x] power level control
+- [x] fan speed control
+- [x] operating modes (Airkare, Relax, Standby, Auto)
+- [x] multi-zone temperature control
 
 ## Limitations
 

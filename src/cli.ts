@@ -201,6 +201,15 @@ const createProgram = (): Command => {
       ) => api.getPower(jwtToken, mac),
     },
     {
+      commandName: "getPowerLevel",
+      description: "Retrieve manual power level (1-5)",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getPowerLevel(jwtToken, mac),
+    },
+    {
       commandName: "getEnvironmentTemperature",
       description: "Retrieve environment temperature",
       getter: (
@@ -217,6 +226,78 @@ const createProgram = (): Command => {
         jwtToken: string,
         mac: string,
       ) => api.getTargetTemperature(jwtToken, mac),
+    },
+    {
+      commandName: "getFan1Speed",
+      description: "Retrieve fan 1 speed",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getFan1Speed(jwtToken, mac),
+    },
+    {
+      commandName: "getFan2Speed",
+      description: "Retrieve fan 2 speed",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getFan2Speed(jwtToken, mac),
+    },
+    {
+      commandName: "getFan3Speed",
+      description: "Retrieve fan 3 speed",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getFan3Speed(jwtToken, mac),
+    },
+    {
+      commandName: "getStandby",
+      description: "Retrieve Standby mode status",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getStandby(jwtToken, mac),
+    },
+    {
+      commandName: "getStandbyTime",
+      description: "Retrieve standby waiting time in minutes",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getStandbyTime(jwtToken, mac),
+    },
+    {
+      commandName: "getAuto",
+      description: "Retrieve Auto mode status",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getAuto(jwtToken, mac),
+    },
+    {
+      commandName: "getEnvironment2Temperature",
+      description: "Retrieve Environment 2 target temperature",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getEnvironment2Temperature(jwtToken, mac),
+    },
+    {
+      commandName: "getEnvironment3Temperature",
+      description: "Retrieve Environment 3 target temperature",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getEnvironment3Temperature(jwtToken, mac),
     },
   ].forEach(({ commandName, description, getter }) => {
     addLegacyOption(
@@ -238,6 +319,16 @@ const createProgram = (): Command => {
       ) => api.setPower(jwtToken, mac, value),
     },
     {
+      commandName: "setPowerLevel",
+      description: "Set manual power level (1-5)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setPowerLevel(jwtToken, mac, value),
+    },
+    {
       commandName: "setTargetTemperature",
       description: "Set the target temperature (degree celsius) for a device",
       setter: (
@@ -246,6 +337,106 @@ const createProgram = (): Command => {
         mac: string,
         value: number,
       ) => api.setTargetTemperature(jwtToken, mac, value),
+    },
+    {
+      commandName: "setFan1Speed",
+      description: "Set fan 1 speed (0-5)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setFan1Speed(jwtToken, mac, value),
+    },
+    {
+      commandName: "setFan2Speed",
+      description: "Set fan 2 speed (0-5)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setFan2Speed(jwtToken, mac, value),
+    },
+    {
+      commandName: "setFan3Speed",
+      description: "Set fan 3 speed (0-5)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setFan3Speed(jwtToken, mac, value),
+    },
+    {
+      commandName: "setAirkare",
+      description: "Enable/disable Airkare mode (1=on, 0=off)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setAirkare(jwtToken, mac, value === 1),
+    },
+    {
+      commandName: "setRelax",
+      description: "Enable/disable Relax mode (1=on, 0=off)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setRelax(jwtToken, mac, value === 1),
+    },
+    {
+      commandName: "setStandby",
+      description: "Enable/disable Standby mode (1=on, 0=off)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setStandby(jwtToken, mac, value === 1),
+    },
+    {
+      commandName: "setStandbyTime",
+      description: "Set standby waiting time in minutes",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setStandbyTime(jwtToken, mac, value),
+    },
+    {
+      commandName: "setAuto",
+      description: "Enable/disable Auto mode (1=on, 0=off)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setAuto(jwtToken, mac, value === 1),
+    },
+    {
+      commandName: "setEnvironment2Temperature",
+      description: "Set Environment 2 target temperature (degrees Celsius)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setEnvironment2Temperature(jwtToken, mac, value),
+    },
+    {
+      commandName: "setEnvironment3Temperature",
+      description: "Set Environment 3 target temperature (degrees Celsius)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setEnvironment3Temperature(jwtToken, mac, value),
     },
   ].forEach(({ commandName, description, setter }) => {
     addLegacyOption(

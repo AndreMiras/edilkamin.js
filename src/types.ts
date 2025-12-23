@@ -27,6 +27,12 @@ interface UserParametersType {
   enviroment_3_temperature: number;
   is_auto: boolean;
   is_sound_active: boolean;
+  manual_power: number;
+  fan_1_ventilation: number;
+  fan_2_ventilation: number;
+  fan_3_ventilation: number;
+  is_standby_active: boolean;
+  standby_waiting_time: number;
 }
 
 interface DeviceInfoType {

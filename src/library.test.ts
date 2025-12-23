@@ -209,9 +209,29 @@ describe("library", () => {
       "setPowerOff",
       "setPowerOn",
       "getPower",
+      "setPowerLevel",
+      "getPowerLevel",
+      "setFan1Speed",
+      "setFan2Speed",
+      "setFan3Speed",
+      "getFan1Speed",
+      "getFan2Speed",
+      "getFan3Speed",
+      "setAirkare",
+      "setRelax",
+      "setStandby",
+      "getStandby",
+      "setStandbyTime",
+      "getStandbyTime",
+      "setAuto",
+      "getAuto",
       "getEnvironmentTemperature",
       "getTargetTemperature",
       "setTargetTemperature",
+      "setEnvironment2Temperature",
+      "getEnvironment2Temperature",
+      "setEnvironment3Temperature",
+      "getEnvironment3Temperature",
     ];
     it("should create API methods with the correct baseURL", async () => {
       const baseURL = "https://example.com/api/";
@@ -247,6 +267,15 @@ describe("library", () => {
       nvm: {
         user_parameters: {
           enviroment_1_temperature: 22,
+          enviroment_2_temperature: 18,
+          enviroment_3_temperature: 20,
+          manual_power: 3,
+          fan_1_ventilation: 2,
+          fan_2_ventilation: 3,
+          fan_3_ventilation: 4,
+          is_standby_active: true,
+          standby_waiting_time: 30,
+          is_auto: true,
         },
       },
     };
@@ -316,6 +345,30 @@ describe("library", () => {
         expectedResult: true,
       },
       {
+        method: "getPowerLevel",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getPowerLevel(token, mac),
+        expectedResult: 3,
+      },
+      {
+        method: "getFan1Speed",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getFan1Speed(token, mac),
+        expectedResult: 2,
+      },
+      {
+        method: "getFan2Speed",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getFan2Speed(token, mac),
+        expectedResult: 3,
+      },
+      {
+        method: "getFan3Speed",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getFan3Speed(token, mac),
+        expectedResult: 4,
+      },
+      {
         method: "getEnvironmentTemperature",
         call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
           api.getEnvironmentTemperature(token, mac),
@@ -326,6 +379,36 @@ describe("library", () => {
         call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
           api.getTargetTemperature(token, mac),
         expectedResult: 22,
+      },
+      {
+        method: "getStandby",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getStandby(token, mac),
+        expectedResult: true,
+      },
+      {
+        method: "getStandbyTime",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getStandbyTime(token, mac),
+        expectedResult: 30,
+      },
+      {
+        method: "getAuto",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getAuto(token, mac),
+        expectedResult: true,
+      },
+      {
+        method: "getEnvironment2Temperature",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getEnvironment2Temperature(token, mac),
+        expectedResult: 18,
+      },
+      {
+        method: "getEnvironment3Temperature",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getEnvironment3Temperature(token, mac),
+        expectedResult: 20,
       },
     ];
     getterTests.forEach(({ method, call, expectedResult }) => {
@@ -350,6 +433,58 @@ describe("library", () => {
     // Setter tests
     const setterTests = [
       {
+        method: "setPowerLevel",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          value: number,
+        ) => api.setPowerLevel(token, mac, value),
+        payload: {
+          name: "power_level",
+          value: 4,
+        },
+      },
+      {
+        method: "setFan1Speed",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          value: number,
+        ) => api.setFan1Speed(token, mac, value),
+        payload: {
+          name: "fan_1_speed",
+          value: 3,
+        },
+      },
+      {
+        method: "setFan2Speed",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          value: number,
+        ) => api.setFan2Speed(token, mac, value),
+        payload: {
+          name: "fan_2_speed",
+          value: 4,
+        },
+      },
+      {
+        method: "setFan3Speed",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          value: number,
+        ) => api.setFan3Speed(token, mac, value),
+        payload: {
+          name: "fan_3_speed",
+          value: 5,
+        },
+      },
+      {
         method: "setTargetTemperature",
         call: (
           api: ReturnType<typeof configure>,
@@ -360,6 +495,45 @@ describe("library", () => {
         payload: {
           name: "enviroment_1_temperature",
           value: 20,
+        },
+      },
+      {
+        method: "setStandbyTime",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          value: number,
+        ) => api.setStandbyTime(token, mac, value),
+        payload: {
+          name: "standby_time",
+          value: 45,
+        },
+      },
+      {
+        method: "setEnvironment2Temperature",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          value: number,
+        ) => api.setEnvironment2Temperature(token, mac, value),
+        payload: {
+          name: "enviroment_2_temperature",
+          value: 21,
+        },
+      },
+      {
+        method: "setEnvironment3Temperature",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          value: number,
+        ) => api.setEnvironment3Temperature(token, mac, value),
+        payload: {
+          name: "enviroment_3_temperature",
+          value: 23,
         },
       },
     ];
@@ -388,6 +562,97 @@ describe("library", () => {
         });
       });
     });
+
+    // Boolean setter tests (for mode controls)
+    const booleanSetterTests = [
+      {
+        method: "setAirkare",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          enabled: boolean,
+        ) => api.setAirkare(token, mac, enabled),
+        truePayload: { name: "airkare_function", value: 1 },
+        falsePayload: { name: "airkare_function", value: 0 },
+      },
+      {
+        method: "setRelax",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          enabled: boolean,
+        ) => api.setRelax(token, mac, enabled),
+        truePayload: { name: "relax_mode", value: true },
+        falsePayload: { name: "relax_mode", value: false },
+      },
+      {
+        method: "setStandby",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          enabled: boolean,
+        ) => api.setStandby(token, mac, enabled),
+        truePayload: { name: "standby_mode", value: true },
+        falsePayload: { name: "standby_mode", value: false },
+      },
+      {
+        method: "setAuto",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          enabled: boolean,
+        ) => api.setAuto(token, mac, enabled),
+        truePayload: { name: "auto_mode", value: true },
+        falsePayload: { name: "auto_mode", value: false },
+      },
+    ];
+    booleanSetterTests.forEach(
+      ({ method, call, truePayload, falsePayload }) => {
+        it(`should call fetch with correct payload for ${method}(true)`, async () => {
+          fetchStub.resolves(mockResponse({ success: true }));
+          const api = configure("https://example.com/api/");
+
+          await call(api, expectedToken, "mockMacAddress", true);
+
+          assert.ok(fetchStub.calledOnce);
+          assert.deepEqual(fetchStub.firstCall.args[1], {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${expectedToken}`,
+            },
+            body: JSON.stringify({
+              mac_address: "mockMacAddress",
+              ...truePayload,
+            }),
+          });
+        });
+
+        it(`should call fetch with correct payload for ${method}(false)`, async () => {
+          fetchStub.resolves(mockResponse({ success: true }));
+          const api = configure("https://example.com/api/");
+
+          await call(api, expectedToken, "mockMacAddress", false);
+
+          assert.ok(fetchStub.calledOnce);
+          assert.deepEqual(fetchStub.firstCall.args[1], {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${expectedToken}`,
+            },
+            body: JSON.stringify({
+              mac_address: "mockMacAddress",
+              ...falsePayload,
+            }),
+          });
+        });
+      },
+    );
   });
 
   describe("registerDevice", () => {
