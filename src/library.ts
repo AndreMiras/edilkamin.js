@@ -718,6 +718,74 @@ const getServiceTime =
  */
 const DEFAULT_SERVICE_THRESHOLD = 2000;
 
+/**
+ * Derives usage analytics from an existing DeviceInfo response.
+ * This is a pure function that performs client-side calculations without API calls.
+ *
+ * Use this when you already have a DeviceInfo object (e.g., from a previous deviceInfo() call)
+ * to avoid making an additional API request.
+ *
+ * @param {DeviceInfoType} deviceInfo - The device info response object.
+ * @param {number} [serviceThreshold=2000] - Service threshold in hours.
+ * @returns {UsageAnalyticsType} - Comprehensive usage analytics.
+ *
+ * @example
+ * const info = await api.deviceInfo(token, mac);
+ * const analytics = deriveUsageAnalytics(info);
+ */
+export const deriveUsageAnalytics = (
+  deviceInfo: DeviceInfoType,
+  serviceThreshold: number = DEFAULT_SERVICE_THRESHOLD,
+): UsageAnalyticsType => {
+  const totalCounters = deviceInfo.nvm.total_counters;
+  const serviceCounters = deviceInfo.nvm.service_counters;
+  const regeneration = deviceInfo.nvm.regeneration;
+  const alarmsLog = deviceInfo.nvm.alarms_log;
+
+  const totalOperatingHours =
+    totalCounters.p1_working_time +
+    totalCounters.p2_working_time +
+    totalCounters.p3_working_time +
+    totalCounters.p4_working_time +
+    totalCounters.p5_working_time;
+
+  const hoursSinceService =
+    serviceCounters.p1_working_time +
+    serviceCounters.p2_working_time +
+    serviceCounters.p3_working_time +
+    serviceCounters.p4_working_time +
+    serviceCounters.p5_working_time;
+
+  const powerDistribution: PowerDistributionType =
+    totalOperatingHours === 0
+      ? { p1: 0, p2: 0, p3: 0, p4: 0, p5: 0 }
+      : {
+          p1: (totalCounters.p1_working_time / totalOperatingHours) * 100,
+          p2: (totalCounters.p2_working_time / totalOperatingHours) * 100,
+          p3: (totalCounters.p3_working_time / totalOperatingHours) * 100,
+          p4: (totalCounters.p4_working_time / totalOperatingHours) * 100,
+          p5: (totalCounters.p5_working_time / totalOperatingHours) * 100,
+        };
+
+  return {
+    totalPowerOns: totalCounters.power_ons,
+    totalOperatingHours,
+    powerDistribution,
+    serviceStatus: {
+      totalServiceHours: deviceInfo.status.counters.service_time,
+      hoursSinceService,
+      serviceThresholdHours: serviceThreshold,
+      isServiceDue: hoursSinceService >= serviceThreshold,
+    },
+    blackoutCount: regeneration.blackout_counter,
+    lastMaintenanceDate:
+      regeneration.last_intervention > 0
+        ? new Date(regeneration.last_intervention * 1000)
+        : null,
+    alarmCount: alarmsLog.number,
+  };
+};
+
 const getTotalOperatingHours =
   (baseURL: string) =>
   /**
@@ -821,54 +889,7 @@ const getUsageAnalytics =
     serviceThreshold: number = DEFAULT_SERVICE_THRESHOLD,
   ): Promise<UsageAnalyticsType> => {
     const info = await deviceInfo(baseURL)(jwtToken, macAddress);
-
-    const totalCounters = info.nvm.total_counters;
-    const serviceCounters = info.nvm.service_counters;
-    const regeneration = info.nvm.regeneration;
-    const alarmsLog = info.nvm.alarms_log;
-
-    const totalOperatingHours =
-      totalCounters.p1_working_time +
-      totalCounters.p2_working_time +
-      totalCounters.p3_working_time +
-      totalCounters.p4_working_time +
-      totalCounters.p5_working_time;
-
-    const hoursSinceService =
-      serviceCounters.p1_working_time +
-      serviceCounters.p2_working_time +
-      serviceCounters.p3_working_time +
-      serviceCounters.p4_working_time +
-      serviceCounters.p5_working_time;
-
-    const powerDistribution: PowerDistributionType =
-      totalOperatingHours === 0
-        ? { p1: 0, p2: 0, p3: 0, p4: 0, p5: 0 }
-        : {
-            p1: (totalCounters.p1_working_time / totalOperatingHours) * 100,
-            p2: (totalCounters.p2_working_time / totalOperatingHours) * 100,
-            p3: (totalCounters.p3_working_time / totalOperatingHours) * 100,
-            p4: (totalCounters.p4_working_time / totalOperatingHours) * 100,
-            p5: (totalCounters.p5_working_time / totalOperatingHours) * 100,
-          };
-
-    return {
-      totalPowerOns: totalCounters.power_ons,
-      totalOperatingHours,
-      powerDistribution,
-      serviceStatus: {
-        totalServiceHours: info.status.counters.service_time,
-        hoursSinceService,
-        serviceThresholdHours: serviceThreshold,
-        isServiceDue: hoursSinceService >= serviceThreshold,
-      },
-      blackoutCount: regeneration.blackout_counter,
-      lastMaintenanceDate:
-        regeneration.last_intervention > 0
-          ? new Date(regeneration.last_intervention * 1000)
-          : null,
-      alarmCount: alarmsLog.number,
-    };
+    return deriveUsageAnalytics(info, serviceThreshold);
   };
 
 const registerDevice =

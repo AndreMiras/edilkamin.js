@@ -3,7 +3,11 @@ import * as amplifyAuth from "aws-amplify/auth";
 import pako from "pako";
 import sinon from "sinon";
 
-import { configure, createAuthService } from "../src/library";
+import {
+  configure,
+  createAuthService,
+  deriveUsageAnalytics,
+} from "../src/library";
 import { API_URL } from "./constants";
 
 /**
@@ -1304,6 +1308,174 @@ describe("library", () => {
         "00:11:22:33:44:55",
       );
       assert.equal(result.lastMaintenanceDate, null);
+    });
+  });
+
+  describe("deriveUsageAnalytics", () => {
+    const mockDeviceInfoForDerive = {
+      status: {
+        commands: {
+          power: false,
+        },
+        temperatures: {
+          enviroment: 20,
+          set_air: 21,
+          get_air: 20,
+          set_water: 40,
+          get_water: 35,
+        },
+        counters: {
+          service_time: 1108,
+        },
+        flags: {
+          is_pellet_in_reserve: false,
+        },
+        pellet: {
+          autonomy_time: 180,
+        },
+      },
+      nvm: {
+        user_parameters: {
+          language: 1,
+          is_auto: false,
+          is_fahrenheit: false,
+          is_sound_active: false,
+          enviroment_1_temperature: 19,
+          enviroment_2_temperature: 20,
+          enviroment_3_temperature: 20,
+          manual_power: 1,
+          fan_1_ventilation: 3,
+          fan_2_ventilation: 0,
+          fan_3_ventilation: 0,
+          is_standby_active: false,
+          standby_waiting_time: 60,
+        },
+        total_counters: {
+          power_ons: 278,
+          p1_working_time: 833,
+          p2_working_time: 15,
+          p3_working_time: 19,
+          p4_working_time: 8,
+          p5_working_time: 17,
+        },
+        service_counters: {
+          p1_working_time: 100,
+          p2_working_time: 10,
+          p3_working_time: 5,
+          p4_working_time: 2,
+          p5_working_time: 1,
+        },
+        regeneration: {
+          time: 0,
+          last_intervention: 1577836800,
+          daylight_time_flag: 0,
+          blackout_counter: 43,
+          airkare_working_hours_counter: 0,
+        },
+        alarms_log: {
+          number: 6,
+          index: 6,
+          alarms: [],
+        },
+      },
+    };
+
+    it("should derive analytics from device info without API call", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const analytics = deriveUsageAnalytics(mockDeviceInfoForDerive as any);
+
+      assert.equal(analytics.totalPowerOns, 278);
+      assert.equal(analytics.totalOperatingHours, 892); // 833+15+19+8+17
+      assert.equal(analytics.blackoutCount, 43);
+      assert.equal(analytics.alarmCount, 6);
+    });
+
+    it("should calculate power distribution correctly", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const analytics = deriveUsageAnalytics(mockDeviceInfoForDerive as any);
+
+      // P1: 833/892 ≈ 93.4%
+      assert.ok(analytics.powerDistribution.p1 > 93);
+      assert.ok(analytics.powerDistribution.p1 < 94);
+
+      // Sum should be 100%
+      const sum = Object.values(analytics.powerDistribution).reduce(
+        (a, b) => a + b,
+        0,
+      );
+      assert.ok(Math.abs(sum - 100) < 0.001);
+    });
+
+    it("should handle zero operating hours", () => {
+      const zeroHoursInfo = {
+        ...mockDeviceInfoForDerive,
+        nvm: {
+          ...mockDeviceInfoForDerive.nvm,
+          total_counters: {
+            power_ons: 0,
+            p1_working_time: 0,
+            p2_working_time: 0,
+            p3_working_time: 0,
+            p4_working_time: 0,
+            p5_working_time: 0,
+          },
+        },
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const analytics = deriveUsageAnalytics(zeroHoursInfo as any);
+      assert.deepEqual(analytics.powerDistribution, {
+        p1: 0,
+        p2: 0,
+        p3: 0,
+        p4: 0,
+        p5: 0,
+      });
+    });
+
+    it("should respect custom service threshold", () => {
+      const analytics = deriveUsageAnalytics(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        mockDeviceInfoForDerive as any,
+        100,
+      );
+
+      // 118 hours since service >= 100 threshold
+      assert.equal(analytics.serviceStatus.isServiceDue, true);
+      assert.equal(analytics.serviceStatus.serviceThresholdHours, 100);
+    });
+
+    it("should use default threshold of 2000 hours", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const analytics = deriveUsageAnalytics(mockDeviceInfoForDerive as any);
+
+      assert.equal(analytics.serviceStatus.serviceThresholdHours, 2000);
+      assert.equal(analytics.serviceStatus.isServiceDue, false); // 118 < 2000
+    });
+
+    it("should convert last_intervention timestamp to Date", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const analytics = deriveUsageAnalytics(mockDeviceInfoForDerive as any);
+
+      assert.ok(analytics.lastMaintenanceDate instanceof Date);
+      assert.equal(analytics.lastMaintenanceDate?.getTime(), 1577836800 * 1000);
+    });
+
+    it("should return null for lastMaintenanceDate when timestamp is 0", () => {
+      const noMaintenanceInfo = {
+        ...mockDeviceInfoForDerive,
+        nvm: {
+          ...mockDeviceInfoForDerive.nvm,
+          regeneration: {
+            ...mockDeviceInfoForDerive.nvm.regeneration,
+            last_intervention: 0,
+          },
+        },
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const analytics = deriveUsageAnalytics(noMaintenanceInfo as any);
+      assert.equal(analytics.lastMaintenanceDate, null);
     });
   });
 

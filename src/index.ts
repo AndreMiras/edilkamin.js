@@ -3,7 +3,7 @@ import { configure } from "./library";
 export { bleToWifiMac } from "./bluetooth-utils";
 export { decompressBuffer, isBuffer, processResponse } from "./buffer-utils";
 export { API_URL, NEW_API_URL, OLD_API_URL } from "./constants";
-export { configure, getSession, signIn } from "./library";
+export { configure, deriveUsageAnalytics, getSession, signIn } from "./library";
 export {
   serialNumberDisplay,
   serialNumberFromHex,
