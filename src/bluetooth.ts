@@ -113,3 +113,24 @@ export {
 
 // Re-export DiscoveredDevice for convenience
 export type { DiscoveredDevice } from "./types";
+
+// Protocol functions
+export {
+  aesDecrypt,
+  aesEncrypt,
+  crc16Modbus,
+  createPacket,
+  // Constants
+  NOTIFY_CHARACTERISTIC_UUID,
+  parseResponse,
+  // Commands
+  parsers,
+  readCommands,
+  SERVICE_UUID,
+  WRITE_CHARACTERISTIC_UUID,
+  // Parsers
+  writeCommands,
+} from "./bluetooth-protocol";
+
+// Protocol types
+export type { ModbusResponse } from "./bluetooth-protocol";
