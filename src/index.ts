@@ -11,6 +11,7 @@ export {
   getSession,
   signIn,
 } from "./library";
+export { normalizeMac } from "./mac-utils";
 export {
   serialNumberDisplay,
   serialNumberFromHex,

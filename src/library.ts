@@ -5,6 +5,7 @@ import { cognitoUserPoolsTokenProvider } from "aws-amplify/auth/cognito";
 
 import { processResponse } from "./buffer-utils";
 import { API_URL } from "./constants";
+import { normalizeMac } from "./mac-utils";
 import {
   AlarmsLogType,
   DeviceAssociationBody,
@@ -974,7 +975,7 @@ const registerDevice =
     deviceRoom: string = "",
   ): Promise<DeviceAssociationResponse> => {
     const body: DeviceAssociationBody = {
-      macAddress: macAddress.replace(/:/g, ""),
+      macAddress: normalizeMac(macAddress),
       deviceName,
       deviceRoom,
       serialNumber,
@@ -1006,7 +1007,7 @@ const editDevice =
     deviceName: string = "",
     deviceRoom: string = "",
   ): Promise<DeviceAssociationResponse> => {
-    const normalizedMac = macAddress.replace(/:/g, "");
+    const normalizedMac = normalizeMac(macAddress);
     const body: EditDeviceAssociationBody = {
       deviceName,
       deviceRoom,

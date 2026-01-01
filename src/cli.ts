@@ -5,6 +5,7 @@ import readline from "readline";
 import { version } from "../package.json";
 import { NEW_API_URL, OLD_API_URL } from "./constants";
 import { configure, configureAmplify, getSession, signIn } from "./library";
+import { normalizeMac } from "./mac-utils";
 import { clearSession, createFileStorage } from "./token-storage";
 import { AlarmCode, AlarmDescriptions } from "./types";
 
@@ -77,7 +78,7 @@ const initializeCommand = async (options: {
   api: ReturnType<typeof configure>;
 }> => {
   const { username, password, mac, legacy = false } = options;
-  const normalizedMac = mac.replace(/:/g, "");
+  const normalizedMac = normalizeMac(mac);
 
   // Initialize file storage for session persistence
   const storage = createFileStorage();
@@ -633,7 +634,7 @@ const createProgram = (): Command => {
     ),
   ).action(async (options) => {
     const { username, password, mac, index, legacy = false } = options;
-    const normalizedMac = mac.replace(/:/g, "");
+    const normalizedMac = normalizeMac(mac);
     const storage = createFileStorage();
     configureAmplify(storage);
     let jwtToken: string;
@@ -674,7 +675,7 @@ const createProgram = (): Command => {
     ),
   ).action(async (options) => {
     const { username, password, mac, index, legacy = false } = options;
-    const normalizedMac = mac.replace(/:/g, "");
+    const normalizedMac = normalizeMac(mac);
     const storage = createFileStorage();
     configureAmplify(storage);
     let jwtToken: string;
@@ -716,7 +717,7 @@ const createProgram = (): Command => {
     ),
   ).action(async (options) => {
     const { username, password, mac, index, value, legacy = false } = options;
-    const normalizedMac = mac.replace(/:/g, "");
+    const normalizedMac = normalizeMac(mac);
     const storage = createFileStorage();
     configureAmplify(storage);
     let jwtToken: string;
@@ -762,7 +763,7 @@ const createProgram = (): Command => {
     ),
   ).action(async (options) => {
     const { username, password, mac, index, value, legacy = false } = options;
-    const normalizedMac = mac.replace(/:/g, "");
+    const normalizedMac = normalizeMac(mac);
     const storage = createFileStorage();
     configureAmplify(storage);
     let jwtToken: string;
@@ -801,7 +802,7 @@ const createProgram = (): Command => {
     ),
   ).action(async (options) => {
     const { username, password, mac, legacy = false } = options;
-    const normalizedMac = mac.replace(/:/g, "");
+    const normalizedMac = normalizeMac(mac);
     const storage = createFileStorage();
     configureAmplify(storage);
     let jwtToken: string;
@@ -854,7 +855,7 @@ const createProgram = (): Command => {
         room,
         legacy = false,
       } = options;
-      const normalizedMac = mac.replace(/:/g, "");
+      const normalizedMac = normalizeMac(mac);
 
       // Initialize file storage for session persistence
       const storage = createFileStorage();
@@ -900,7 +901,7 @@ const createProgram = (): Command => {
     .requiredOption("-r, --room <deviceRoom>", "Room name")
     .action(async (options) => {
       const { username, password, mac, name, room, legacy = false } = options;
-      const normalizedMac = mac.replace(/:/g, "");
+      const normalizedMac = normalizeMac(mac);
 
       // Initialize file storage for session persistence
       const storage = createFileStorage();

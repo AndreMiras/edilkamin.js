@@ -1,3 +1,5 @@
+import { normalizeMac } from "./mac-utils";
+
 /**
  * Converts a BLE MAC address to WiFi MAC address.
  * The WiFi MAC is the BLE MAC minus 2 in hexadecimal.
@@ -10,13 +12,7 @@
  * bleToWifiMac("a8032afed50a")      // returns "a8032afed508"
  */
 const bleToWifiMac = (bleMac: string): string => {
-  // Remove colons, dashes, and convert to lowercase
-  const normalized = bleMac.replace(/[:-]/g, "").toLowerCase();
-
-  // Validate MAC address format (12 hex characters)
-  if (!/^[0-9a-f]{12}$/.test(normalized)) {
-    throw new Error(`Invalid MAC address format: ${bleMac}`);
-  }
+  const normalized = normalizeMac(bleMac);
 
   // Convert to number, subtract 2, convert back to hex
   const bleValue = BigInt(`0x${normalized}`);

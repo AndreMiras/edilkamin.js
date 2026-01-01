@@ -782,7 +782,7 @@ describe("library", () => {
           Authorization: `Bearer ${expectedToken}`,
         },
         body: JSON.stringify({
-          macAddress: "AABBCCDDEEFF",
+          macAddress: "aabbccddeeff",
           deviceName: "Test Stove",
           deviceRoom: "Living Room",
           serialNumber: "EDK123",
@@ -791,14 +791,14 @@ describe("library", () => {
       assert.deepEqual(result, mockResponseData);
     });
 
-    it("should normalize MAC address by removing colons", async () => {
+    it("should normalize MAC address by removing colons and converting to lowercase", async () => {
       fetchStub.resolves(mockResponse({}));
       const api = configure("https://example.com/api/");
 
       await api.registerDevice(expectedToken, "AA:BB:CC:DD:EE:FF", "EDK123");
 
       const body = JSON.parse(fetchStub.firstCall.args[1].body);
-      assert.equal(body.macAddress, "AABBCCDDEEFF");
+      assert.equal(body.macAddress, "aabbccddeeff");
     });
 
     it("should use empty strings as defaults for name and room", async () => {
@@ -834,7 +834,7 @@ describe("library", () => {
       assert.ok(fetchStub.calledOnce);
       assert.equal(
         fetchStub.firstCall.args[0],
-        "https://example.com/api/device/AABBCCDDEEFF",
+        "https://example.com/api/device/aabbccddeeff",
       );
       assert.deepEqual(fetchStub.firstCall.args[1], {
         method: "PUT",
