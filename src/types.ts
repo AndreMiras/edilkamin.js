@@ -36,9 +36,15 @@ interface StatusCountersType {
  * Retrieved from status.state in the API response.
  */
 interface StateType {
-  /** Main operational phase (0=Off, 1=Standby, 2=Ignition, 6=On) */
+  /**
+   * Main operational phase (0=Off, 1=Ignition, 2=On, 3=Shutting down, 4=Cooling, 5=Final cleaning)
+   * See OperationalPhase enum for all values.
+   */
   operational_phase: number;
-  /** Sub-phase within current operation (0-6 during ignition) */
+  /**
+   * Sub-phase within current operation (0-7 during ignition)
+   * See IgnitionSubPhase enum for all values. Only meaningful when operational_phase = 1 (IGNITION).
+   */
   sub_operational_phase: number;
   /** Combined stove state code */
   stove_state: number;
@@ -246,63 +252,80 @@ const AlarmDescriptions: Record<AlarmCode, string> = {
 
 /**
  * Main operational phases of the stove.
- * Values derived from device behavior observation.
+ * Values from StatusFireplaceEnum in official Edilkamin Android app.
  */
 enum OperationalPhase {
-  OFF = 0,
-  STANDBY = 1,
-  IGNITION = 2,
-  ON = 6,
+  OFF = 0, // SPENTO
+  IGNITION = 1, // ACCENSIONE
+  ON = 2, // ACCESO
+  SHUTTING_DOWN = 3, // SPEGNIMENTO
+  COOLING = 4, // RAFFREDDAMENTO
+  FINAL_CLEANING = 5, // PULIZIA_FINALE
 }
 
 /**
  * Human-readable descriptions for operational phases.
+ * English translations from strings.xml in official Edilkamin Android app.
  */
-const OperationalPhaseDescriptions: Record<number, string> = {
+const OperationalPhaseDescriptions: Record<OperationalPhase, string> = {
   [OperationalPhase.OFF]: "Off",
-  [OperationalPhase.STANDBY]: "Standby",
   [OperationalPhase.IGNITION]: "Ignition",
   [OperationalPhase.ON]: "On",
+  [OperationalPhase.SHUTTING_DOWN]: "Shutting down",
+  [OperationalPhase.COOLING]: "Cooling",
+  [OperationalPhase.FINAL_CLEANING]: "Final cleaning",
 };
 
 /**
  * Get description for an operational phase, with fallback for unknown values.
+ *
+ * @param phase - The operational phase value from API
+ * @returns Human-readable description
  */
 const getOperationalPhaseDescription = (phase: number): string =>
-  OperationalPhaseDescriptions[phase] ?? `Unknown phase (${phase})`;
+  OperationalPhaseDescriptions[phase as OperationalPhase] ??
+  `Unknown phase (${phase})`;
 
 /**
  * Sub-phases during ignition sequence.
- * These are only meaningful when operational_phase === IGNITION.
+ * These are only meaningful when operational_phase === IGNITION (1).
+ * Values from SubStatusEnum in official Edilkamin Android app.
  */
 enum IgnitionSubPhase {
-  STARTING_CLEANING = 0,
-  PELLET_LOAD = 1,
-  LOADING_BREAK = 2,
-  SMOKE_TEMPERATURE_CHECK = 3,
-  THRESHOLD_EXCEEDING_CHECK = 4,
-  WARMUP = 5,
-  TRANSITION_TO_ON = 6,
+  HOT_STOVE_CLEANING = 0, // PULIZIA_STUFA_CALDA
+  CLEANING_WITHOUT_CLEANER = 1, // PULIZIA_SENZA_EKLEANER
+  CLEANING_WITH_CLEANER = 2, // PULIZIA_CON_EKLEANER
+  PELLET_LOAD = 3, // CARICO_PELLET
+  LOADING_BREAK = 4, // PAUSA_CARICAMENTO
+  SMOKE_TEMP_CHECK = 5, // CONTROLLO_INCREMENTO_TEMPERATURA
+  THRESHOLD_CHECK = 6, // CONTROLLO_SUPERAMENTO_SOGLIA
+  WARMUP = 7, // WARMUP
 }
 
 /**
  * Human-readable descriptions for ignition sub-phases.
+ * English translations from strings.xml in official Edilkamin Android app.
  */
-const IgnitionSubPhaseDescriptions: Record<number, string> = {
-  [IgnitionSubPhase.STARTING_CLEANING]: "Starting cleaning",
+const IgnitionSubPhaseDescriptions: Record<IgnitionSubPhase, string> = {
+  [IgnitionSubPhase.HOT_STOVE_CLEANING]: "Hot stove cleaning",
+  [IgnitionSubPhase.CLEANING_WITHOUT_CLEANER]: "Cleaning without cleaner",
+  [IgnitionSubPhase.CLEANING_WITH_CLEANER]: "Cleaning with cleaner",
   [IgnitionSubPhase.PELLET_LOAD]: "Pellet load",
   [IgnitionSubPhase.LOADING_BREAK]: "Loading break",
-  [IgnitionSubPhase.SMOKE_TEMPERATURE_CHECK]: "Smoke temperature check",
-  [IgnitionSubPhase.THRESHOLD_EXCEEDING_CHECK]: "Threshold exceeding check",
+  [IgnitionSubPhase.SMOKE_TEMP_CHECK]: "Smoke temperature check",
+  [IgnitionSubPhase.THRESHOLD_CHECK]: "Threshold check",
   [IgnitionSubPhase.WARMUP]: "Warmup",
-  [IgnitionSubPhase.TRANSITION_TO_ON]: "Starting up",
 };
 
 /**
  * Get description for an ignition sub-phase, with fallback for unknown values.
+ *
+ * @param subPhase - The sub-phase value from API
+ * @returns Human-readable description
  */
 const getIgnitionSubPhaseDescription = (subPhase: number): string =>
-  IgnitionSubPhaseDescriptions[subPhase] ?? `Unknown sub-phase (${subPhase})`;
+  IgnitionSubPhaseDescriptions[subPhase as IgnitionSubPhase] ??
+  `Unknown sub-phase (${subPhase})`;
 
 /**
  * Combined stove states.

@@ -1603,28 +1603,44 @@ describe("library", () => {
       assert.equal(getPhaseDescription(0, 0), "Off");
     });
 
-    it("should return 'Standby' for phase 1", () => {
-      assert.equal(getPhaseDescription(1, 0), "Standby");
+    it("should return 'Ignition' with sub-phase for phase 1", () => {
+      assert.equal(getPhaseDescription(1, 0), "Ignition - Hot stove cleaning");
     });
 
-    it("should return 'On' for phase 6", () => {
-      assert.equal(getPhaseDescription(6, 0), "On");
+    it("should return 'On' for phase 2", () => {
+      assert.equal(getPhaseDescription(2, 0), "On");
+    });
+
+    it("should return 'Shutting down' for phase 3", () => {
+      assert.equal(getPhaseDescription(3, 0), "Shutting down");
+    });
+
+    it("should return 'Cooling' for phase 4", () => {
+      assert.equal(getPhaseDescription(4, 0), "Cooling");
+    });
+
+    it("should return 'Final cleaning' for phase 5", () => {
+      assert.equal(getPhaseDescription(5, 0), "Final cleaning");
     });
 
     it("should return combined description for ignition phase", () => {
-      assert.equal(getPhaseDescription(2, 0), "Ignition - Starting cleaning");
-      assert.equal(getPhaseDescription(2, 1), "Ignition - Pellet load");
-      assert.equal(getPhaseDescription(2, 2), "Ignition - Loading break");
+      assert.equal(getPhaseDescription(1, 0), "Ignition - Hot stove cleaning");
       assert.equal(
-        getPhaseDescription(2, 3),
+        getPhaseDescription(1, 1),
+        "Ignition - Cleaning without cleaner",
+      );
+      assert.equal(
+        getPhaseDescription(1, 2),
+        "Ignition - Cleaning with cleaner",
+      );
+      assert.equal(getPhaseDescription(1, 3), "Ignition - Pellet load");
+      assert.equal(getPhaseDescription(1, 4), "Ignition - Loading break");
+      assert.equal(
+        getPhaseDescription(1, 5),
         "Ignition - Smoke temperature check",
       );
-      assert.equal(
-        getPhaseDescription(2, 4),
-        "Ignition - Threshold exceeding check",
-      );
-      assert.equal(getPhaseDescription(2, 5), "Ignition - Warmup");
-      assert.equal(getPhaseDescription(2, 6), "Ignition - Starting up");
+      assert.equal(getPhaseDescription(1, 6), "Ignition - Threshold check");
+      assert.equal(getPhaseDescription(1, 7), "Ignition - Warmup");
     });
 
     it("should return fallback for unknown operational phase", () => {
@@ -1633,7 +1649,7 @@ describe("library", () => {
 
     it("should return fallback for unknown ignition sub-phase", () => {
       assert.equal(
-        getPhaseDescription(2, 99),
+        getPhaseDescription(1, 99),
         "Ignition - Unknown sub-phase (99)",
       );
     });
@@ -1649,8 +1665,8 @@ describe("library", () => {
           pellet: { autonomy_time: 120 },
           counters: { service_time: 100 },
           state: {
-            operational_phase: 2,
-            sub_operational_phase: 5,
+            operational_phase: 1, // IGNITION
+            sub_operational_phase: 7, // WARMUP
             stove_state: 5,
             alarm_type: 0,
             actual_power: 3,
@@ -1680,7 +1696,7 @@ describe("library", () => {
           pellet: { autonomy_time: 120 },
           counters: { service_time: 100 },
           state: {
-            operational_phase: 6,
+            operational_phase: 2, // ON
             sub_operational_phase: 0,
             stove_state: 6,
             alarm_type: 0,
@@ -1707,18 +1723,26 @@ describe("library", () => {
     it("should return descriptions for known phases", () => {
       assert.equal(getOperationalPhaseDescription(OperationalPhase.OFF), "Off");
       assert.equal(
-        getOperationalPhaseDescription(OperationalPhase.STANDBY),
-        "Standby",
-      );
-      assert.equal(
         getOperationalPhaseDescription(OperationalPhase.IGNITION),
         "Ignition",
       );
       assert.equal(getOperationalPhaseDescription(OperationalPhase.ON), "On");
+      assert.equal(
+        getOperationalPhaseDescription(OperationalPhase.SHUTTING_DOWN),
+        "Shutting down",
+      );
+      assert.equal(
+        getOperationalPhaseDescription(OperationalPhase.COOLING),
+        "Cooling",
+      );
+      assert.equal(
+        getOperationalPhaseDescription(OperationalPhase.FINAL_CLEANING),
+        "Final cleaning",
+      );
     });
 
     it("should return fallback for unknown phases", () => {
-      assert.equal(getOperationalPhaseDescription(3), "Unknown phase (3)");
+      assert.equal(getOperationalPhaseDescription(6), "Unknown phase (6)");
       assert.equal(getOperationalPhaseDescription(99), "Unknown phase (99)");
     });
   });
@@ -1726,8 +1750,18 @@ describe("library", () => {
   describe("IgnitionSubPhase descriptions", () => {
     it("should return descriptions for all ignition sub-phases", () => {
       assert.equal(
-        getIgnitionSubPhaseDescription(IgnitionSubPhase.STARTING_CLEANING),
-        "Starting cleaning",
+        getIgnitionSubPhaseDescription(IgnitionSubPhase.HOT_STOVE_CLEANING),
+        "Hot stove cleaning",
+      );
+      assert.equal(
+        getIgnitionSubPhaseDescription(
+          IgnitionSubPhase.CLEANING_WITHOUT_CLEANER,
+        ),
+        "Cleaning without cleaner",
+      );
+      assert.equal(
+        getIgnitionSubPhaseDescription(IgnitionSubPhase.CLEANING_WITH_CLEANER),
+        "Cleaning with cleaner",
       );
       assert.equal(
         getIgnitionSubPhaseDescription(IgnitionSubPhase.PELLET_LOAD),
@@ -1738,24 +1772,16 @@ describe("library", () => {
         "Loading break",
       );
       assert.equal(
-        getIgnitionSubPhaseDescription(
-          IgnitionSubPhase.SMOKE_TEMPERATURE_CHECK,
-        ),
+        getIgnitionSubPhaseDescription(IgnitionSubPhase.SMOKE_TEMP_CHECK),
         "Smoke temperature check",
       );
       assert.equal(
-        getIgnitionSubPhaseDescription(
-          IgnitionSubPhase.THRESHOLD_EXCEEDING_CHECK,
-        ),
-        "Threshold exceeding check",
+        getIgnitionSubPhaseDescription(IgnitionSubPhase.THRESHOLD_CHECK),
+        "Threshold check",
       );
       assert.equal(
         getIgnitionSubPhaseDescription(IgnitionSubPhase.WARMUP),
         "Warmup",
-      );
-      assert.equal(
-        getIgnitionSubPhaseDescription(IgnitionSubPhase.TRANSITION_TO_ON),
-        "Starting up",
       );
     });
 
