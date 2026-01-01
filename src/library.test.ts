@@ -6,8 +6,18 @@ import sinon from "sinon";
 import {
   configure,
   createAuthService,
+  derivePhaseDescription,
   deriveUsageAnalytics,
+  getPhaseDescription,
 } from "../src/library";
+import {
+  getIgnitionSubPhaseDescription,
+  getOperationalPhaseDescription,
+  getStoveStateDescription,
+  IgnitionSubPhase,
+  OperationalPhase,
+  StoveState,
+} from "../src/types";
 import { API_URL } from "./constants";
 
 /**
@@ -246,6 +256,11 @@ describe("library", () => {
       "getLanguage",
       "getPelletInReserve",
       "getPelletAutonomyTime",
+      // Phase/state getters
+      "getOperationalPhase",
+      "getSubOperationalPhase",
+      "getStoveState",
+      "getActualPower",
       // Statistics getters
       "getTotalCounters",
       "getServiceCounters",
@@ -1476,6 +1491,312 @@ describe("library", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const analytics = deriveUsageAnalytics(noMaintenanceInfo as any);
       assert.equal(analytics.lastMaintenanceDate, null);
+    });
+  });
+
+  describe("phase getters", () => {
+    const mockDeviceInfoWithState = {
+      status: {
+        commands: { power: true },
+        temperatures: { board: 25, enviroment: 20 },
+        flags: { is_pellet_in_reserve: false },
+        pellet: { autonomy_time: 900 },
+        counters: { service_time: 1108 },
+        state: {
+          operational_phase: 2,
+          sub_operational_phase: 3,
+          stove_state: 4,
+          alarm_type: 0,
+          actual_power: 3,
+        },
+        fans: { fan_1_speed: 3, fan_2_speed: 0, fan_3_speed: 0 },
+      },
+      nvm: {
+        user_parameters: {
+          language: 1,
+          is_auto: false,
+          is_fahrenheit: false,
+          is_sound_active: false,
+          enviroment_1_temperature: 19,
+          enviroment_2_temperature: 20,
+          enviroment_3_temperature: 20,
+          manual_power: 1,
+          fan_1_ventilation: 3,
+          fan_2_ventilation: 0,
+          fan_3_ventilation: 0,
+          is_standby_active: false,
+          standby_waiting_time: 60,
+        },
+        total_counters: {
+          power_ons: 278,
+          p1_working_time: 833,
+          p2_working_time: 15,
+          p3_working_time: 19,
+          p4_working_time: 8,
+          p5_working_time: 17,
+        },
+        service_counters: {
+          p1_working_time: 100,
+          p2_working_time: 10,
+          p3_working_time: 5,
+          p4_working_time: 2,
+          p5_working_time: 1,
+        },
+        alarms_log: {
+          number: 2,
+          index: 2,
+          alarms: [],
+        },
+        regeneration: {
+          time: 0,
+          last_intervention: 1577836800,
+          daylight_time_flag: 0,
+          blackout_counter: 43,
+          airkare_working_hours_counter: 0,
+        },
+      },
+    };
+
+    it("should get operational phase", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfoWithState));
+      const api = configure(API_URL);
+      const result = await api.getOperationalPhase(
+        expectedToken,
+        "00:11:22:33:44:55",
+      );
+      assert.equal(result, 2);
+    });
+
+    it("should get sub-operational phase", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfoWithState));
+      const api = configure(API_URL);
+      const result = await api.getSubOperationalPhase(
+        expectedToken,
+        "00:11:22:33:44:55",
+      );
+      assert.equal(result, 3);
+    });
+
+    it("should get stove state", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfoWithState));
+      const api = configure(API_URL);
+      const result = await api.getStoveState(
+        expectedToken,
+        "00:11:22:33:44:55",
+      );
+      assert.equal(result, 4);
+    });
+
+    it("should get actual power", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfoWithState));
+      const api = configure(API_URL);
+      const result = await api.getActualPower(
+        expectedToken,
+        "00:11:22:33:44:55",
+      );
+      assert.equal(result, 3);
+    });
+  });
+
+  describe("getPhaseDescription", () => {
+    it("should return 'Off' for phase 0", () => {
+      assert.equal(getPhaseDescription(0, 0), "Off");
+    });
+
+    it("should return 'Standby' for phase 1", () => {
+      assert.equal(getPhaseDescription(1, 0), "Standby");
+    });
+
+    it("should return 'On' for phase 6", () => {
+      assert.equal(getPhaseDescription(6, 0), "On");
+    });
+
+    it("should return combined description for ignition phase", () => {
+      assert.equal(getPhaseDescription(2, 0), "Ignition - Starting cleaning");
+      assert.equal(getPhaseDescription(2, 1), "Ignition - Pellet load");
+      assert.equal(getPhaseDescription(2, 2), "Ignition - Loading break");
+      assert.equal(
+        getPhaseDescription(2, 3),
+        "Ignition - Smoke temperature check",
+      );
+      assert.equal(
+        getPhaseDescription(2, 4),
+        "Ignition - Threshold exceeding check",
+      );
+      assert.equal(getPhaseDescription(2, 5), "Ignition - Warmup");
+      assert.equal(getPhaseDescription(2, 6), "Ignition - Starting up");
+    });
+
+    it("should return fallback for unknown operational phase", () => {
+      assert.equal(getPhaseDescription(99, 0), "Unknown phase (99)");
+    });
+
+    it("should return fallback for unknown ignition sub-phase", () => {
+      assert.equal(
+        getPhaseDescription(2, 99),
+        "Ignition - Unknown sub-phase (99)",
+      );
+    });
+  });
+
+  describe("derivePhaseDescription", () => {
+    it("should derive phase description from device info", () => {
+      const mockDeviceInfo = {
+        status: {
+          commands: { power: true },
+          temperatures: { board: 25, enviroment: 22 },
+          flags: { is_pellet_in_reserve: true },
+          pellet: { autonomy_time: 120 },
+          counters: { service_time: 100 },
+          state: {
+            operational_phase: 2,
+            sub_operational_phase: 5,
+            stove_state: 5,
+            alarm_type: 0,
+            actual_power: 3,
+          },
+          fans: { fan_1_speed: 3, fan_2_speed: 0, fan_3_speed: 0 },
+        },
+        nvm: {
+          user_parameters: {},
+          total_counters: {},
+          service_counters: {},
+          alarms_log: { number: 0, index: 0, alarms: [] },
+          regeneration: {},
+        },
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const desc = derivePhaseDescription(mockDeviceInfo as any);
+      assert.equal(desc, "Ignition - Warmup");
+    });
+
+    it("should return 'On' for device in On state", () => {
+      const mockDeviceInfo = {
+        status: {
+          commands: { power: true },
+          temperatures: { board: 25, enviroment: 22 },
+          flags: { is_pellet_in_reserve: false },
+          pellet: { autonomy_time: 120 },
+          counters: { service_time: 100 },
+          state: {
+            operational_phase: 6,
+            sub_operational_phase: 0,
+            stove_state: 6,
+            alarm_type: 0,
+            actual_power: 3,
+          },
+          fans: { fan_1_speed: 3, fan_2_speed: 0, fan_3_speed: 0 },
+        },
+        nvm: {
+          user_parameters: {},
+          total_counters: {},
+          service_counters: {},
+          alarms_log: { number: 0, index: 0, alarms: [] },
+          regeneration: {},
+        },
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const desc = derivePhaseDescription(mockDeviceInfo as any);
+      assert.equal(desc, "On");
+    });
+  });
+
+  describe("OperationalPhase descriptions", () => {
+    it("should return descriptions for known phases", () => {
+      assert.equal(getOperationalPhaseDescription(OperationalPhase.OFF), "Off");
+      assert.equal(
+        getOperationalPhaseDescription(OperationalPhase.STANDBY),
+        "Standby",
+      );
+      assert.equal(
+        getOperationalPhaseDescription(OperationalPhase.IGNITION),
+        "Ignition",
+      );
+      assert.equal(getOperationalPhaseDescription(OperationalPhase.ON), "On");
+    });
+
+    it("should return fallback for unknown phases", () => {
+      assert.equal(getOperationalPhaseDescription(3), "Unknown phase (3)");
+      assert.equal(getOperationalPhaseDescription(99), "Unknown phase (99)");
+    });
+  });
+
+  describe("IgnitionSubPhase descriptions", () => {
+    it("should return descriptions for all ignition sub-phases", () => {
+      assert.equal(
+        getIgnitionSubPhaseDescription(IgnitionSubPhase.STARTING_CLEANING),
+        "Starting cleaning",
+      );
+      assert.equal(
+        getIgnitionSubPhaseDescription(IgnitionSubPhase.PELLET_LOAD),
+        "Pellet load",
+      );
+      assert.equal(
+        getIgnitionSubPhaseDescription(IgnitionSubPhase.LOADING_BREAK),
+        "Loading break",
+      );
+      assert.equal(
+        getIgnitionSubPhaseDescription(
+          IgnitionSubPhase.SMOKE_TEMPERATURE_CHECK,
+        ),
+        "Smoke temperature check",
+      );
+      assert.equal(
+        getIgnitionSubPhaseDescription(
+          IgnitionSubPhase.THRESHOLD_EXCEEDING_CHECK,
+        ),
+        "Threshold exceeding check",
+      );
+      assert.equal(
+        getIgnitionSubPhaseDescription(IgnitionSubPhase.WARMUP),
+        "Warmup",
+      );
+      assert.equal(
+        getIgnitionSubPhaseDescription(IgnitionSubPhase.TRANSITION_TO_ON),
+        "Starting up",
+      );
+    });
+
+    it("should return fallback for unknown sub-phases", () => {
+      assert.equal(
+        getIgnitionSubPhaseDescription(99),
+        "Unknown sub-phase (99)",
+      );
+    });
+  });
+
+  describe("StoveState descriptions", () => {
+    it("should return descriptions for known states", () => {
+      assert.equal(getStoveStateDescription(StoveState.OFF), "Off");
+      assert.equal(getStoveStateDescription(StoveState.STANDBY), "Standby");
+      assert.equal(
+        getStoveStateDescription(StoveState.IGNITION_CLEANING),
+        "Ignition - Cleaning",
+      );
+      assert.equal(
+        getStoveStateDescription(StoveState.IGNITION_LOADING),
+        "Ignition - Loading pellets",
+      );
+      assert.equal(
+        getStoveStateDescription(StoveState.IGNITION_WAITING),
+        "Ignition - Waiting",
+      );
+      assert.equal(
+        getStoveStateDescription(StoveState.IGNITION_WARMUP),
+        "Ignition - Warming up",
+      );
+      assert.equal(getStoveStateDescription(StoveState.ON), "On");
+      assert.equal(
+        getStoveStateDescription(StoveState.COOLING),
+        "Cooling down",
+      );
+      assert.equal(getStoveStateDescription(StoveState.ALARM), "Alarm");
+    });
+
+    it("should return fallback for unknown states", () => {
+      assert.equal(getStoveStateDescription(99), "Unknown state (99)");
     });
   });
 

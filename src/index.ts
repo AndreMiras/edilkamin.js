@@ -3,7 +3,14 @@ import { configure } from "./library";
 export { bleToWifiMac } from "./bluetooth-utils";
 export { decompressBuffer, isBuffer, processResponse } from "./buffer-utils";
 export { API_URL, NEW_API_URL, OLD_API_URL } from "./constants";
-export { configure, deriveUsageAnalytics, getSession, signIn } from "./library";
+export {
+  configure,
+  derivePhaseDescription,
+  deriveUsageAnalytics,
+  getPhaseDescription,
+  getSession,
+  signIn,
+} from "./library";
 export {
   serialNumberDisplay,
   serialNumberFromHex,
@@ -20,10 +27,12 @@ export {
   DeviceInfoType,
   DiscoveredDevice,
   EditDeviceAssociationBody,
+  FansType,
   PowerDistributionType,
   RegenerationDataType,
   ServiceCountersType,
   ServiceStatusType,
+  StateType,
   StatusCountersType,
   StatusType,
   TemperaturesType,
@@ -31,7 +40,19 @@ export {
   UsageAnalyticsType,
   UserParametersType,
 } from "./types";
-export { AlarmCode, AlarmDescriptions } from "./types";
+export {
+  AlarmCode,
+  AlarmDescriptions,
+  getIgnitionSubPhaseDescription,
+  getOperationalPhaseDescription,
+  getStoveStateDescription,
+  IgnitionSubPhase,
+  IgnitionSubPhaseDescriptions,
+  OperationalPhase,
+  OperationalPhaseDescriptions,
+  StoveState,
+  StoveStateDescriptions,
+} from "./types";
 
 export const {
   deviceInfo,

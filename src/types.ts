@@ -31,12 +31,44 @@ interface StatusCountersType {
   service_time: number;
 }
 
+/**
+ * Device operational state information.
+ * Retrieved from status.state in the API response.
+ */
+interface StateType {
+  /** Main operational phase (0=Off, 1=Standby, 2=Ignition, 6=On) */
+  operational_phase: number;
+  /** Sub-phase within current operation (0-6 during ignition) */
+  sub_operational_phase: number;
+  /** Combined stove state code */
+  stove_state: number;
+  /** Current alarm code (0 = no alarm) */
+  alarm_type: number;
+  /** Current actual power level (1-5) */
+  actual_power: number;
+}
+
+/**
+ * Fan speed information for all three fans.
+ * Retrieved from status.fans in the API response.
+ */
+interface FansType {
+  /** Fan 1 speed (0-5) */
+  fan_1_speed: number;
+  /** Fan 2 speed (0-5) */
+  fan_2_speed: number;
+  /** Fan 3 speed (0-5) */
+  fan_3_speed: number;
+}
+
 interface StatusType {
   commands: CommandsType;
   temperatures: TemperaturesType;
   flags: GeneralFlagsType;
   pellet: PelletAutonomyType;
   counters: StatusCountersType;
+  state: StateType;
+  fans: FansType;
 }
 
 interface UserParametersType {
@@ -212,6 +244,103 @@ const AlarmDescriptions: Record<AlarmCode, string> = {
   [AlarmCode.BOARD_FUSE]: "Control board fuse issue",
 };
 
+/**
+ * Main operational phases of the stove.
+ * Values derived from device behavior observation.
+ */
+enum OperationalPhase {
+  OFF = 0,
+  STANDBY = 1,
+  IGNITION = 2,
+  ON = 6,
+}
+
+/**
+ * Human-readable descriptions for operational phases.
+ */
+const OperationalPhaseDescriptions: Record<number, string> = {
+  [OperationalPhase.OFF]: "Off",
+  [OperationalPhase.STANDBY]: "Standby",
+  [OperationalPhase.IGNITION]: "Ignition",
+  [OperationalPhase.ON]: "On",
+};
+
+/**
+ * Get description for an operational phase, with fallback for unknown values.
+ */
+const getOperationalPhaseDescription = (phase: number): string =>
+  OperationalPhaseDescriptions[phase] ?? `Unknown phase (${phase})`;
+
+/**
+ * Sub-phases during ignition sequence.
+ * These are only meaningful when operational_phase === IGNITION.
+ */
+enum IgnitionSubPhase {
+  STARTING_CLEANING = 0,
+  PELLET_LOAD = 1,
+  LOADING_BREAK = 2,
+  SMOKE_TEMPERATURE_CHECK = 3,
+  THRESHOLD_EXCEEDING_CHECK = 4,
+  WARMUP = 5,
+  TRANSITION_TO_ON = 6,
+}
+
+/**
+ * Human-readable descriptions for ignition sub-phases.
+ */
+const IgnitionSubPhaseDescriptions: Record<number, string> = {
+  [IgnitionSubPhase.STARTING_CLEANING]: "Starting cleaning",
+  [IgnitionSubPhase.PELLET_LOAD]: "Pellet load",
+  [IgnitionSubPhase.LOADING_BREAK]: "Loading break",
+  [IgnitionSubPhase.SMOKE_TEMPERATURE_CHECK]: "Smoke temperature check",
+  [IgnitionSubPhase.THRESHOLD_EXCEEDING_CHECK]: "Threshold exceeding check",
+  [IgnitionSubPhase.WARMUP]: "Warmup",
+  [IgnitionSubPhase.TRANSITION_TO_ON]: "Starting up",
+};
+
+/**
+ * Get description for an ignition sub-phase, with fallback for unknown values.
+ */
+const getIgnitionSubPhaseDescription = (subPhase: number): string =>
+  IgnitionSubPhaseDescriptions[subPhase] ?? `Unknown sub-phase (${subPhase})`;
+
+/**
+ * Combined stove states.
+ * This is a composite value combining operational phase and sub-phase.
+ */
+enum StoveState {
+  OFF = 0,
+  STANDBY = 1,
+  IGNITION_CLEANING = 2,
+  IGNITION_LOADING = 3,
+  IGNITION_WAITING = 4,
+  IGNITION_WARMUP = 5,
+  ON = 6,
+  COOLING = 7,
+  ALARM = 8,
+}
+
+/**
+ * Human-readable descriptions for stove states.
+ */
+const StoveStateDescriptions: Record<number, string> = {
+  [StoveState.OFF]: "Off",
+  [StoveState.STANDBY]: "Standby",
+  [StoveState.IGNITION_CLEANING]: "Ignition - Cleaning",
+  [StoveState.IGNITION_LOADING]: "Ignition - Loading pellets",
+  [StoveState.IGNITION_WAITING]: "Ignition - Waiting",
+  [StoveState.IGNITION_WARMUP]: "Ignition - Warming up",
+  [StoveState.ON]: "On",
+  [StoveState.COOLING]: "Cooling down",
+  [StoveState.ALARM]: "Alarm",
+};
+
+/**
+ * Get description for a stove state, with fallback for unknown values.
+ */
+const getStoveStateDescription = (state: number): string =>
+  StoveStateDescriptions[state] ?? `Unknown state (${state})`;
+
 interface DeviceInfoType {
   status: StatusType;
   nvm: {
@@ -294,12 +423,14 @@ export type {
   DeviceInfoType,
   DiscoveredDevice,
   EditDeviceAssociationBody,
+  FansType,
   GeneralFlagsType,
   PelletAutonomyType,
   PowerDistributionType,
   RegenerationDataType,
   ServiceCountersType,
   ServiceStatusType,
+  StateType,
   StatusCountersType,
   StatusType,
   TemperaturesType,
@@ -308,4 +439,16 @@ export type {
   UserParametersType,
 };
 
-export { AlarmCode, AlarmDescriptions };
+export {
+  AlarmCode,
+  AlarmDescriptions,
+  getIgnitionSubPhaseDescription,
+  getOperationalPhaseDescription,
+  getStoveStateDescription,
+  IgnitionSubPhase,
+  IgnitionSubPhaseDescriptions,
+  OperationalPhase,
+  OperationalPhaseDescriptions,
+  StoveState,
+  StoveStateDescriptions,
+};

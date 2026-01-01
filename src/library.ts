@@ -12,6 +12,9 @@ import {
   DeviceInfoRawType,
   DeviceInfoType,
   EditDeviceAssociationBody,
+  getIgnitionSubPhaseDescription,
+  getOperationalPhaseDescription,
+  OperationalPhase,
   PowerDistributionType,
   RegenerationDataType,
   ServiceCountersType,
@@ -631,6 +634,64 @@ const getPelletAutonomyTime =
     return info.status.pellet.autonomy_time;
   };
 
+const getOperationalPhase =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current operational phase of the stove.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - The operational phase (0=Off, 1=Standby, 2=Ignition, 6=On).
+   */
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.status.state.operational_phase;
+  };
+
+const getSubOperationalPhase =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current sub-operational phase of the stove.
+   * Only meaningful during ignition (operational_phase === 2).
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - The sub-operational phase (0-6 during ignition).
+   */
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.status.state.sub_operational_phase;
+  };
+
+const getStoveState =
+  (baseURL: string) =>
+  /**
+   * Retrieves the combined stove state code.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - The stove state code.
+   */
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.status.state.stove_state;
+  };
+
+const getActualPower =
+  (baseURL: string) =>
+  /**
+   * Retrieves the actual power level the stove is currently running at.
+   * This may differ from the requested power level during transitions.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<number>} - The actual power level (1-5).
+   */
+  async (jwtToken: string, macAddress: string): Promise<number> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return info.status.state.actual_power;
+  };
+
 const getTotalCounters =
   (baseURL: string) =>
   /**
@@ -965,6 +1026,46 @@ const editDevice =
   };
 
 /**
+ * Get human-readable description of the current device phase.
+ * Combines operational_phase and sub_operational_phase for context.
+ *
+ * @param {number} operationalPhase - The main operational phase.
+ * @param {number} subOperationalPhase - The sub-phase (used during ignition).
+ * @returns {string} - Human-readable phase description.
+ *
+ * @example
+ * const desc = getPhaseDescription(2, 1);
+ * // Returns: "Ignition - Pellet load"
+ */
+export const getPhaseDescription = (
+  operationalPhase: number,
+  subOperationalPhase: number,
+): string => {
+  if (operationalPhase === OperationalPhase.IGNITION) {
+    const subDesc = getIgnitionSubPhaseDescription(subOperationalPhase);
+    return `Ignition - ${subDesc}`;
+  }
+  return getOperationalPhaseDescription(operationalPhase);
+};
+
+/**
+ * Derive phase description from existing DeviceInfo.
+ * Pure function - no API calls required.
+ *
+ * @param {DeviceInfoType} deviceInfo - The device info object.
+ * @returns {string} - Human-readable phase description.
+ *
+ * @example
+ * const info = await api.deviceInfo(token, mac);
+ * const desc = derivePhaseDescription(info);
+ * // Returns: "On" or "Ignition - Warmup" etc.
+ */
+export const derivePhaseDescription = (deviceInfo: DeviceInfoType): string => {
+  const { operational_phase, sub_operational_phase } = deviceInfo.status.state;
+  return getPhaseDescription(operational_phase, sub_operational_phase);
+};
+
+/**
  * Configures the library for API interactions.
  * Initializes API methods with a specified base URL.
  *
@@ -1016,6 +1117,11 @@ const configure = (baseURL: string = API_URL) => ({
   getLanguage: getLanguage(baseURL),
   getPelletInReserve: getPelletInReserve(baseURL),
   getPelletAutonomyTime: getPelletAutonomyTime(baseURL),
+  // Phase/state getters
+  getOperationalPhase: getOperationalPhase(baseURL),
+  getSubOperationalPhase: getSubOperationalPhase(baseURL),
+  getStoveState: getStoveState(baseURL),
+  getActualPower: getActualPower(baseURL),
   // Statistics getters
   getTotalCounters: getTotalCounters(baseURL),
   getServiceCounters: getServiceCounters(baseURL),
