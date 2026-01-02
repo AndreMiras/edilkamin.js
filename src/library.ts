@@ -727,6 +727,27 @@ const getServiceCounters =
     return info.nvm.service_counters;
   };
 
+/**
+ * Derives alarm history from an existing DeviceInfo response.
+ * This is a pure function that extracts alarm data without API calls.
+ *
+ * Use this when you already have a DeviceInfo object (e.g., from a previous deviceInfo() call)
+ * to avoid making an additional API request.
+ *
+ * @param {DeviceInfoType} deviceInfo - The device info response object.
+ * @returns {AlarmsLogType} - Alarm history log.
+ *
+ * @example
+ * const info = await api.deviceInfo(token, mac);
+ * const alarms = deriveAlarmHistory(info);
+ * // No additional API call needed
+ */
+export const deriveAlarmHistory = (
+  deviceInfo: DeviceInfoType,
+): AlarmsLogType => {
+  return deviceInfo.nvm.alarms_log;
+};
+
 const getAlarmHistory =
   (baseURL: string) =>
   /**
@@ -739,7 +760,7 @@ const getAlarmHistory =
    */
   async (jwtToken: string, macAddress: string): Promise<AlarmsLogType> => {
     const info = await deviceInfo(baseURL)(jwtToken, macAddress);
-    return info.nvm.alarms_log;
+    return deriveAlarmHistory(info);
   };
 
 const getRegenerationData =

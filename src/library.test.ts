@@ -6,6 +6,7 @@ import sinon from "sinon";
 import {
   configure,
   createAuthService,
+  deriveAlarmHistory,
   derivePhaseDescription,
   deriveUsageAnalytics,
   getPhaseDescription,
@@ -1491,6 +1492,112 @@ describe("library", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const analytics = deriveUsageAnalytics(noMaintenanceInfo as any);
       assert.equal(analytics.lastMaintenanceDate, null);
+    });
+  });
+
+  describe("deriveAlarmHistory", () => {
+    const mockDeviceInfoForAlarms = {
+      status: {
+        commands: { power: true },
+        temperatures: { board: 25, enviroment: 20 },
+        flags: { is_pellet_in_reserve: false },
+        pellet: { autonomy_time: 900 },
+        counters: { service_time: 1108 },
+        state: {
+          operational_phase: 2,
+          sub_operational_phase: 0,
+          stove_state: 6,
+          alarm_type: 0,
+          actual_power: 3,
+        },
+        fans: { fan_1_speed: 3, fan_2_speed: 0, fan_3_speed: 0 },
+      },
+      nvm: {
+        user_parameters: {
+          language: 1,
+          is_auto: false,
+          is_fahrenheit: false,
+          is_sound_active: false,
+          enviroment_1_temperature: 19,
+          enviroment_2_temperature: 20,
+          enviroment_3_temperature: 20,
+          manual_power: 1,
+          fan_1_ventilation: 3,
+          fan_2_ventilation: 0,
+          fan_3_ventilation: 0,
+          is_standby_active: false,
+          standby_waiting_time: 60,
+        },
+        total_counters: {
+          power_ons: 278,
+          p1_working_time: 833,
+          p2_working_time: 15,
+          p3_working_time: 19,
+          p4_working_time: 8,
+          p5_working_time: 17,
+        },
+        service_counters: {
+          p1_working_time: 100,
+          p2_working_time: 10,
+          p3_working_time: 5,
+          p4_working_time: 2,
+          p5_working_time: 1,
+        },
+        alarms_log: {
+          number: 2,
+          index: 2,
+          alarms: [
+            { type: 3, timestamp: 1700000000 },
+            { type: 21, timestamp: 1700001000 },
+          ],
+        },
+        regeneration: {
+          time: 0,
+          last_intervention: 1577836800,
+          daylight_time_flag: 0,
+          blackout_counter: 43,
+          airkare_working_hours_counter: 0,
+        },
+      },
+    };
+
+    it("should derive alarm history from device info", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const alarms = deriveAlarmHistory(mockDeviceInfoForAlarms as any);
+
+      assert.equal(alarms.number, 2);
+      assert.equal(alarms.index, 2);
+      assert.equal(alarms.alarms.length, 2);
+      assert.equal(alarms.alarms[0].type, 3);
+      assert.equal(alarms.alarms[0].timestamp, 1700000000);
+      assert.equal(alarms.alarms[1].type, 21);
+      assert.equal(alarms.alarms[1].timestamp, 1700001000);
+    });
+
+    it("should return reference to same object", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const alarms = deriveAlarmHistory(mockDeviceInfoForAlarms as any);
+      assert.strictEqual(alarms, mockDeviceInfoForAlarms.nvm.alarms_log);
+    });
+
+    it("should handle empty alarm history", () => {
+      const emptyAlarmsInfo = {
+        ...mockDeviceInfoForAlarms,
+        nvm: {
+          ...mockDeviceInfoForAlarms.nvm,
+          alarms_log: {
+            number: 0,
+            index: 0,
+            alarms: [],
+          },
+        },
+      };
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const alarms = deriveAlarmHistory(emptyAlarmsInfo as any);
+      assert.equal(alarms.number, 0);
+      assert.equal(alarms.index, 0);
+      assert.equal(alarms.alarms.length, 0);
     });
   });
 
