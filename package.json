@@ -1,6 +1,6 @@
 {
   "name": "edilkamin",
-  "version": "1.12.1",
+  "version": "1.13.0",
   "description": "",
   "main": "dist/cjs/src/index.js",
   "module": "dist/esm/src/index.js",
