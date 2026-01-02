@@ -12,6 +12,7 @@ import {
   DeviceAssociationResponse,
   DeviceInfoRawType,
   DeviceInfoType,
+  EasyTimerStateType,
   EditDeviceAssociationBody,
   getIgnitionSubPhaseDescription,
   getOperationalPhaseDescription,
@@ -345,6 +346,64 @@ const setRelax =
       value: enabled,
     });
 
+/**
+ * Derives the Airkare mode status from an existing DeviceInfo response.
+ * This is a pure function that extracts data without API calls.
+ *
+ * @param {DeviceInfoType} deviceInfo - The device info response object.
+ * @returns {boolean} - Whether Airkare mode is active.
+ *
+ * @example
+ * const info = await api.deviceInfo(token, mac);
+ * const isAirkareActive = deriveAirkare(info);
+ */
+export const deriveAirkare = (deviceInfo: DeviceInfoType): boolean => {
+  return deviceInfo.status.flags.is_airkare_active;
+};
+
+const getAirkare =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current Airkare (air quality) mode status.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<boolean>} - A promise that resolves to the Airkare status.
+   */
+  async (jwtToken: string, macAddress: string): Promise<boolean> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return deriveAirkare(info);
+  };
+
+/**
+ * Derives the Relax mode status from an existing DeviceInfo response.
+ * This is a pure function that extracts data without API calls.
+ *
+ * @param {DeviceInfoType} deviceInfo - The device info response object.
+ * @returns {boolean} - Whether Relax mode is active.
+ *
+ * @example
+ * const info = await api.deviceInfo(token, mac);
+ * const isRelaxActive = deriveRelax(info);
+ */
+export const deriveRelax = (deviceInfo: DeviceInfoType): boolean => {
+  return deviceInfo.status.flags.is_relax_active;
+};
+
+const getRelax =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current Relax (comfort) mode status.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<boolean>} - A promise that resolves to the Relax status.
+   */
+  async (jwtToken: string, macAddress: string): Promise<boolean> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return deriveRelax(info);
+  };
+
 const setStandby =
   (baseURL: string) =>
   /**
@@ -634,6 +693,120 @@ const getPelletAutonomyTime =
     const info = await deviceInfo(baseURL)(jwtToken, macAddress);
     return info.status.pellet.autonomy_time;
   };
+
+/**
+ * Derives the Chrono mode status from an existing DeviceInfo response.
+ * This is a pure function that extracts data without API calls.
+ *
+ * Note: The API field is spelled "is_crono_active" (typo in original API).
+ *
+ * @param {DeviceInfoType} deviceInfo - The device info response object.
+ * @returns {boolean} - Whether Chrono mode is active.
+ *
+ * @example
+ * const info = await api.deviceInfo(token, mac);
+ * const isChronoActive = deriveChronoMode(info);
+ */
+export const deriveChronoMode = (deviceInfo: DeviceInfoType): boolean => {
+  return deviceInfo.status.flags.is_crono_active;
+};
+
+const getChronoMode =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current Chrono (scheduled programming) mode status.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<boolean>} - A promise that resolves to the Chrono mode status.
+   */
+  async (jwtToken: string, macAddress: string): Promise<boolean> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return deriveChronoMode(info);
+  };
+
+/**
+ * Derives the Easy Timer state from an existing DeviceInfo response.
+ * This is a pure function that extracts data without API calls.
+ *
+ * @param {DeviceInfoType} deviceInfo - The device info response object.
+ * @returns {EasyTimerStateType} - Object containing active status and timer time.
+ *
+ * @example
+ * const info = await api.deviceInfo(token, mac);
+ * const timer = deriveEasyTimer(info);
+ * console.log(`Timer active: ${timer.active}, Time: ${timer.time} minutes`);
+ */
+export const deriveEasyTimer = (
+  deviceInfo: DeviceInfoType,
+): EasyTimerStateType => {
+  return {
+    active: deviceInfo.status.flags.is_easytimer_active,
+    time: deviceInfo.status.easytimer.time,
+  };
+};
+
+const getEasyTimer =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current Easy Timer status and time.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<EasyTimerStateType>} - A promise that resolves to the timer state.
+   */
+  async (jwtToken: string, macAddress: string): Promise<EasyTimerStateType> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return deriveEasyTimer(info);
+  };
+
+/**
+ * Derives the Continue Cochlea Loading (continuous cochlea mode) status
+ * from an existing DeviceInfo response.
+ * This is a pure function that extracts data without API calls.
+ *
+ * @param {DeviceInfoType} deviceInfo - The device info response object.
+ * @returns {boolean} - Whether continuous cochlea mode is active.
+ *
+ * @example
+ * const info = await api.deviceInfo(token, mac);
+ * const isCochleaContinuous = deriveContinueCochleaLoading(info);
+ */
+export const deriveContinueCochleaLoading = (
+  deviceInfo: DeviceInfoType,
+): boolean => {
+  return deviceInfo.status.flags.is_cochlea_in_continuous_mode;
+};
+
+const getContinueCochleaLoading =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current Continue Cochlea Loading (continuous pellet feeding) status.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<boolean>} - A promise that resolves to the continuous cochlea mode status.
+   */
+  async (jwtToken: string, macAddress: string): Promise<boolean> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return deriveContinueCochleaLoading(info);
+  };
+
+const setContinueCochleaLoading =
+  (baseURL: string) =>
+  /**
+   * Enables or disables Continue Cochlea Loading (continuous pellet feeding) mode.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {boolean} enabled - Whether to enable continuous cochlea mode.
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, enabled: boolean) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "continuous_coclea_mode",
+      value: enabled ? 1 : 0,
+    });
 
 const getOperationalPhase =
   (baseURL: string) =>
@@ -1117,7 +1290,9 @@ const configure = (baseURL: string = API_URL) => ({
   getFan2Speed: getFan2Speed(baseURL),
   getFan3Speed: getFan3Speed(baseURL),
   setAirkare: setAirkare(baseURL),
+  getAirkare: getAirkare(baseURL),
   setRelax: setRelax(baseURL),
+  getRelax: getRelax(baseURL),
   setStandby: setStandby(baseURL),
   getStandby: getStandby(baseURL),
   setStandbyTime: setStandbyTime(baseURL),
@@ -1139,6 +1314,11 @@ const configure = (baseURL: string = API_URL) => ({
   getLanguage: getLanguage(baseURL),
   getPelletInReserve: getPelletInReserve(baseURL),
   getPelletAutonomyTime: getPelletAutonomyTime(baseURL),
+  // Mode getters
+  getChronoMode: getChronoMode(baseURL),
+  getEasyTimer: getEasyTimer(baseURL),
+  getContinueCochleaLoading: getContinueCochleaLoading(baseURL),
+  setContinueCochleaLoading: setContinueCochleaLoading(baseURL),
   // Phase/state getters
   getOperationalPhase: getOperationalPhase(baseURL),
   getSubOperationalPhase: getSubOperationalPhase(baseURL),

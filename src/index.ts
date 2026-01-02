@@ -5,8 +5,13 @@ export { decompressBuffer, isBuffer, processResponse } from "./buffer-utils";
 export { API_URL, NEW_API_URL, OLD_API_URL } from "./constants";
 export {
   configure,
+  deriveAirkare,
   deriveAlarmHistory,
+  deriveChronoMode,
+  deriveContinueCochleaLoading,
+  deriveEasyTimer,
   derivePhaseDescription,
+  deriveRelax,
   deriveUsageAnalytics,
   getPhaseDescription,
   getSession,
@@ -28,6 +33,8 @@ export {
   DeviceInfoRawType,
   DeviceInfoType,
   DiscoveredDevice,
+  EasyTimerStateType,
+  EasyTimerType,
   EditDeviceAssociationBody,
   FansType,
   PowerDistributionType,

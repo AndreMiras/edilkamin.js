@@ -338,6 +338,52 @@ const createProgram = (): Command => {
         mac: string,
       ) => api.getPelletAutonomyTime(jwtToken, mac),
     },
+    // Mode getters
+    {
+      commandName: "getAirkare",
+      description: "Retrieve Airkare (air quality) mode status",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getAirkare(jwtToken, mac),
+    },
+    {
+      commandName: "getRelax",
+      description: "Retrieve Relax (comfort) mode status",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getRelax(jwtToken, mac),
+    },
+    {
+      commandName: "getChronoMode",
+      description: "Retrieve Chrono (scheduled programming) mode status",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getChronoMode(jwtToken, mac),
+    },
+    {
+      commandName: "getEasyTimer",
+      description: "Retrieve Easy Timer status and time (minutes)",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getEasyTimer(jwtToken, mac),
+    },
+    {
+      commandName: "getContinueCochleaLoading",
+      description: "Retrieve continuous cochlea (pellet feeding) mode status",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getContinueCochleaLoading(jwtToken, mac),
+    },
     // Statistics getters
     {
       commandName: "getTotalCounters",
@@ -608,6 +654,16 @@ const createProgram = (): Command => {
         mac: string,
         value: number,
       ) => api.setLanguage(jwtToken, mac, value),
+    },
+    {
+      commandName: "setContinueCochleaLoading",
+      description: "Enable/disable continuous cochlea mode (1=on, 0=off)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setContinueCochleaLoading(jwtToken, mac, value === 1),
     },
   ].forEach(({ commandName, description, setter }) => {
     addLegacyOption(

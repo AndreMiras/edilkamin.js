@@ -18,10 +18,23 @@ interface TemperaturesType {
 
 interface GeneralFlagsType {
   is_pellet_in_reserve: boolean;
+  is_relax_active: boolean;
+  is_airkare_active: boolean;
+  is_crono_active: boolean;
+  is_easytimer_active: boolean;
+  is_cochlea_in_continuous_mode: boolean;
 }
 
 interface PelletAutonomyType {
   autonomy_time: number;
+}
+
+/**
+ * Easy timer settings from status.easytimer.
+ */
+interface EasyTimerType {
+  /** Timer time in minutes */
+  time: number;
 }
 
 /**
@@ -75,6 +88,7 @@ interface StatusType {
   counters: StatusCountersType;
   state: StateType;
   fans: FansType;
+  easytimer: EasyTimerType;
 }
 
 interface UserParametersType {
@@ -435,6 +449,16 @@ interface DiscoveredDevice {
   rssi?: number;
 }
 
+/**
+ * Easy timer state returned by getEasyTimer.
+ */
+interface EasyTimerStateType {
+  /** Whether easy timer is currently active */
+  active: boolean;
+  /** Timer time in minutes */
+  time: number;
+}
+
 export type {
   AlarmEntryType,
   AlarmsLogType,
@@ -445,6 +469,8 @@ export type {
   DeviceInfoRawType,
   DeviceInfoType,
   DiscoveredDevice,
+  EasyTimerStateType,
+  EasyTimerType,
   EditDeviceAssociationBody,
   FansType,
   GeneralFlagsType,

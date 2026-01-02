@@ -6,8 +6,13 @@ import sinon from "sinon";
 import {
   configure,
   createAuthService,
+  deriveAirkare,
   deriveAlarmHistory,
+  deriveChronoMode,
+  deriveContinueCochleaLoading,
+  deriveEasyTimer,
   derivePhaseDescription,
+  deriveRelax,
   deriveUsageAnalytics,
   getPhaseDescription,
 } from "../src/library";
@@ -235,7 +240,9 @@ describe("library", () => {
       "getFan2Speed",
       "getFan3Speed",
       "setAirkare",
+      "getAirkare",
       "setRelax",
+      "getRelax",
       "setStandby",
       "getStandby",
       "setStandbyTime",
@@ -257,6 +264,11 @@ describe("library", () => {
       "getLanguage",
       "getPelletInReserve",
       "getPelletAutonomyTime",
+      // Mode getters
+      "getChronoMode",
+      "getEasyTimer",
+      "getContinueCochleaLoading",
+      "setContinueCochleaLoading",
       // Phase/state getters
       "getOperationalPhase",
       "getSubOperationalPhase",
@@ -306,9 +318,17 @@ describe("library", () => {
         },
         flags: {
           is_pellet_in_reserve: false,
+          is_airkare_active: true,
+          is_relax_active: false,
+          is_crono_active: true,
+          is_easytimer_active: false,
+          is_cochlea_in_continuous_mode: true,
         },
         pellet: {
           autonomy_time: 180,
+        },
+        easytimer: {
+          time: 45,
         },
       },
       nvm: {
@@ -482,6 +502,30 @@ describe("library", () => {
         call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
           api.getPelletAutonomyTime(token, mac),
         expectedResult: 180,
+      },
+      {
+        method: "getAirkare",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getAirkare(token, mac),
+        expectedResult: true,
+      },
+      {
+        method: "getRelax",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getRelax(token, mac),
+        expectedResult: false,
+      },
+      {
+        method: "getChronoMode",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getChronoMode(token, mac),
+        expectedResult: true,
+      },
+      {
+        method: "getContinueCochleaLoading",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getContinueCochleaLoading(token, mac),
+        expectedResult: true,
       },
     ];
     getterTests.forEach(({ method, call, expectedResult }) => {
@@ -706,6 +750,17 @@ describe("library", () => {
         truePayload: { name: "measure_unit", value: true },
         falsePayload: { name: "measure_unit", value: false },
       },
+      {
+        method: "setContinueCochleaLoading",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          enabled: boolean,
+        ) => api.setContinueCochleaLoading(token, mac, enabled),
+        truePayload: { name: "continuous_coclea_mode", value: 1 },
+        falsePayload: { name: "continuous_coclea_mode", value: 0 },
+      },
     ];
     booleanSetterTests.forEach(
       ({ method, call, truePayload, falsePayload }) => {
@@ -750,6 +805,17 @@ describe("library", () => {
         });
       },
     );
+
+    // Test for getEasyTimer which returns an object
+    it("should return correct object for getEasyTimer", async () => {
+      fetchStub.resolves(mockResponse(mockDeviceInfo));
+      const api = configure("https://example.com/api/");
+
+      const result = await api.getEasyTimer(expectedToken, "mockMacAddress");
+
+      assert.ok(fetchStub.calledOnce);
+      assert.deepEqual(result, { active: false, time: 45 });
+    });
   });
 
   describe("registerDevice", () => {
@@ -1598,6 +1664,73 @@ describe("library", () => {
       assert.equal(alarms.number, 0);
       assert.equal(alarms.index, 0);
       assert.equal(alarms.alarms.length, 0);
+    });
+  });
+
+  describe("mode derive functions", () => {
+    const mockDeviceInfoForModes = {
+      status: {
+        commands: { power: true },
+        temperatures: { board: 25, enviroment: 20 },
+        flags: {
+          is_pellet_in_reserve: false,
+          is_airkare_active: true,
+          is_relax_active: false,
+          is_crono_active: true,
+          is_easytimer_active: true,
+          is_cochlea_in_continuous_mode: false,
+        },
+        pellet: { autonomy_time: 180 },
+        counters: { service_time: 100 },
+        state: {
+          operational_phase: 2,
+          sub_operational_phase: 0,
+          stove_state: 6,
+          alarm_type: 0,
+          actual_power: 3,
+        },
+        fans: { fan_1_speed: 3, fan_2_speed: 0, fan_3_speed: 0 },
+        easytimer: { time: 30 },
+      },
+      nvm: {
+        user_parameters: {},
+        total_counters: {},
+        service_counters: {},
+        alarms_log: { number: 0, index: 0, alarms: [] },
+        regeneration: {},
+      },
+    };
+
+    it("should derive Airkare status from device info", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = deriveAirkare(mockDeviceInfoForModes as any);
+      assert.equal(result, true);
+    });
+
+    it("should derive Relax status from device info", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = deriveRelax(mockDeviceInfoForModes as any);
+      assert.equal(result, false);
+    });
+
+    it("should derive Chrono mode status from device info", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = deriveChronoMode(mockDeviceInfoForModes as any);
+      assert.equal(result, true);
+    });
+
+    it("should derive Easy Timer state from device info", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = deriveEasyTimer(mockDeviceInfoForModes as any);
+      assert.deepEqual(result, { active: true, time: 30 });
+    });
+
+    it("should derive Continue Cochlea Loading status from device info", () => {
+      const result = deriveContinueCochleaLoading(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        mockDeviceInfoForModes as any,
+      );
+      assert.equal(result, false);
     });
   });
 
