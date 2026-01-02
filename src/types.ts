@@ -378,6 +378,44 @@ const StoveStateDescriptions: Record<number, string> = {
 const getStoveStateDescription = (state: number): string =>
   StoveStateDescriptions[state] ?? `Unknown state (${state})`;
 
+/**
+ * Hardware/software component information.
+ * Used for motherboard, panels, remote control, and other hardware components.
+ * Empty serial_number or board_name indicates the component is not installed.
+ */
+interface ComponentType {
+  serial_number: string;
+  board_name: string;
+  bootloader_name: string;
+  bootloader_version: string;
+  application_name: string;
+  application_version: string;
+  compatibility: number;
+}
+
+/**
+ * Component information for all hardware components.
+ * Contains firmware versions, serial numbers, and board information.
+ */
+interface ComponentInfoType {
+  timestamp: number;
+  motherboard: ComponentType;
+  emergency_panel: ComponentType;
+  radio_control: ComponentType;
+  expansion_board: ComponentType;
+  remote_user_panel_1: ComponentType;
+  remote_user_panel_2: ComponentType;
+  remote_user_panel_3: ComponentType;
+  temp_umidity_voc_probe_1: ComponentType;
+  temp_umidity_voc_probe_2: ComponentType;
+  temp_umidity_voc_probe_3: ComponentType;
+  wifi_ble_module: ComponentType;
+  idro_panel: ComponentType;
+  general: {
+    check: number;
+  };
+}
+
 interface DeviceInfoType {
   status: StatusType;
   nvm: {
@@ -387,6 +425,7 @@ interface DeviceInfoType {
     alarms_log: AlarmsLogType;
     regeneration: RegenerationDataType;
   };
+  component_info?: ComponentInfoType;
 }
 
 /**
@@ -464,6 +503,8 @@ export type {
   AlarmsLogType,
   BufferEncodedType,
   CommandsType,
+  ComponentInfoType,
+  ComponentType,
   DeviceAssociationBody,
   DeviceAssociationResponse,
   DeviceInfoRawType,

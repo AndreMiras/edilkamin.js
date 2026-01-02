@@ -28,6 +28,8 @@ export {
   AlarmsLogType,
   BufferEncodedType,
   CommandsType,
+  ComponentInfoType,
+  ComponentType,
   DeviceAssociationBody,
   DeviceAssociationResponse,
   DeviceInfoRawType,
