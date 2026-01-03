@@ -384,8 +384,8 @@ export const readCommands = {
   /** Target temperature (value / 10 = °C) */
   targetTemperature: new Uint8Array([0x01, 0x03, 0x05, 0x37, 0x00, 0x01]),
 
-  /** Power level (1-5) */
-  powerLevel: new Uint8Array([0x01, 0x03, 0x04, 0x40, 0x00, 0x01]),
+  /** Power level (1-5) - register 0x0529 contains [fan1_speed, power_level] */
+  powerLevel: new Uint8Array([0x01, 0x03, 0x05, 0x29, 0x00, 0x01]),
 
   /** Fan 1 speed (0=auto, 1-5=speed) */
   fan1Speed: new Uint8Array([0x01, 0x03, 0x05, 0x4b, 0x00, 0x01]),
@@ -520,5 +520,21 @@ export const parsers = {
   number: (response: ModbusResponse): number => {
     if (response.isError) throw new Error(`Modbus error: ${response.data[0]}`);
     return (response.data[0] << 8) | response.data[1];
+  },
+
+  /**
+   * Parse power level from combined fan+power register.
+   * Register 0x0529 contains: [fan1_speed, power_level]
+   * Extracts only the low byte and validates range 1-5.
+   * @param response - Parsed Modbus response
+   * @returns Power level (1-5)
+   */
+  powerLevel: (response: ModbusResponse): number => {
+    if (response.isError) throw new Error(`Modbus error: ${response.data[0]}`);
+    const value = response.data[1]; // Low byte only
+    // Validate range (clamp to 1-5)
+    if (value < 1) return 1;
+    if (value > 5) return 5;
+    return value;
   },
 };

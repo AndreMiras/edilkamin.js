@@ -222,6 +222,11 @@ describe("bluetooth-protocol", () => {
       assert.equal(readCommands.temperature[2], 0x05);
       assert.equal(readCommands.temperature[3], 0x25);
     });
+
+    it("powerLevel command has correct register address", () => {
+      assert.equal(readCommands.powerLevel[2], 0x05);
+      assert.equal(readCommands.powerLevel[3], 0x29);
+    });
   });
 
   describe("writeCommands", () => {
@@ -449,6 +454,87 @@ describe("bluetooth-protocol", () => {
         isError: true,
       };
       assert.throws(() => parsers.number(errorResponse), /Modbus error: 4/);
+    });
+
+    describe("parsers.powerLevel", () => {
+      it("extracts low byte for power level", () => {
+        const response: ModbusResponse = {
+          slaveAddress: 1,
+          functionCode: 0x03,
+          byteCount: 2,
+          data: new Uint8Array([0x03, 0x02]), // fan=3, power=2
+          isError: false,
+        };
+        assert.equal(parsers.powerLevel(response), 2);
+      });
+
+      it("handles power level 1", () => {
+        const response: ModbusResponse = {
+          slaveAddress: 1,
+          functionCode: 0x03,
+          byteCount: 2,
+          data: new Uint8Array([0x00, 0x01]), // power=1
+          isError: false,
+        };
+        assert.equal(parsers.powerLevel(response), 1);
+      });
+
+      it("handles power level 5", () => {
+        const response: ModbusResponse = {
+          slaveAddress: 1,
+          functionCode: 0x03,
+          byteCount: 2,
+          data: new Uint8Array([0x00, 0x05]), // power=5
+          isError: false,
+        };
+        assert.equal(parsers.powerLevel(response), 5);
+      });
+
+      it("clamps value above 5 to 5", () => {
+        const response: ModbusResponse = {
+          slaveAddress: 1,
+          functionCode: 0x03,
+          byteCount: 2,
+          data: new Uint8Array([0x00, 0x82]), // power=130 (invalid)
+          isError: false,
+        };
+        assert.equal(parsers.powerLevel(response), 5);
+      });
+
+      it("clamps value below 1 to 1", () => {
+        const response: ModbusResponse = {
+          slaveAddress: 1,
+          functionCode: 0x03,
+          byteCount: 2,
+          data: new Uint8Array([0x00, 0x00]), // power=0 (invalid)
+          isError: false,
+        };
+        assert.equal(parsers.powerLevel(response), 1);
+      });
+
+      it("ignores high byte (fan speed)", () => {
+        const response: ModbusResponse = {
+          slaveAddress: 1,
+          functionCode: 0x03,
+          byteCount: 2,
+          data: new Uint8Array([0xff, 0x03]), // fan=255, power=3
+          isError: false,
+        };
+        assert.equal(parsers.powerLevel(response), 3);
+      });
+
+      it("throws on error response", () => {
+        const errorResponse: ModbusResponse = {
+          slaveAddress: 1,
+          functionCode: 0x03,
+          data: new Uint8Array([0x02]), // error code
+          isError: true,
+        };
+        assert.throws(
+          () => parsers.powerLevel(errorResponse),
+          /Modbus error: 2/,
+        );
+      });
     });
   });
 
