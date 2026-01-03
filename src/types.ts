@@ -30,6 +30,56 @@ interface PelletAutonomyType {
 }
 
 /**
+ * Days of the week for schedule indexing.
+ * Monday = 0, Sunday = 6 (matching Edilkamin's internal format).
+ */
+enum Day {
+  MONDAY = 0,
+  TUESDAY = 1,
+  WEDNESDAY = 2,
+  THURSDAY = 3,
+  FRIDAY = 4,
+  SATURDAY = 5,
+  SUNDAY = 6,
+}
+
+/**
+ * Schedule slot values for Chrono Mode temperature scheduling.
+ */
+enum ChronoTemperatureSlot {
+  /** Stove off during this slot */
+  OFF = 0,
+  /** Target the economy temperature */
+  ECONOMY = 1,
+  /** Target the comfort temperature */
+  COMFORT = 2,
+}
+
+/**
+ * Schedule slot values for Chrono Mode power scheduling.
+ */
+enum ChronoPowerSlot {
+  /** Stove off during this slot */
+  OFF = 0,
+  /** Run at power level 1 */
+  POWER1 = 1,
+  /** Run at power level 5 */
+  POWER5 = 2,
+}
+
+/**
+ * Represents a time slot in the weekly schedule.
+ */
+interface TimeSlot {
+  /** Day of week (0-6, Monday=0) */
+  day: Day;
+  /** Starting hour (0-23) */
+  hour: number;
+  /** Starting minutes (0 or 30) */
+  minute: 0 | 30;
+}
+
+/**
  * Easy timer settings from status.easytimer.
  */
 interface EasyTimerType {
@@ -524,6 +574,7 @@ export type {
   StatusCountersType,
   StatusType,
   TemperaturesType,
+  TimeSlot,
   TotalCountersType,
   UsageAnalyticsType,
   UserParametersType,
@@ -532,6 +583,9 @@ export type {
 export {
   AlarmCode,
   AlarmDescriptions,
+  ChronoPowerSlot,
+  ChronoTemperatureSlot,
+  Day,
   getIgnitionSubPhaseDescription,
   getOperationalPhaseDescription,
   getStoveStateDescription,

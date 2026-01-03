@@ -205,6 +205,70 @@ setEnvironment3Temperature(token, mac, 18); // Set zone 3 temperature
 getEnvironment3Temperature(token, mac); // Get zone 3 target
 ```
 
+### Scheduling (Chrono Mode)
+
+The library supports weekly scheduling through Chrono Mode:
+
+```js
+import {
+  setChronoMode,
+  setChronoComfortTemperature,
+  setChronoEconomyTemperature,
+  setChronoTemperatureRanges,
+  createWorkWeekSchedule,
+  Day,
+  ChronoTemperatureSlot,
+} from "edilkamin";
+
+// Configure temperature targets
+await setChronoComfortTemperature(token, mac, 22); // Comfort = 22°C
+await setChronoEconomyTemperature(token, mac, 18); // Economy = 18°C
+
+// Create and apply a schedule
+const schedule = createWorkWeekSchedule({
+  morningStart: 6,
+  morningEnd: 9,
+  eveningStart: 17,
+  eveningEnd: 22,
+});
+await setChronoTemperatureRanges(token, mac, schedule);
+
+// Enable chrono mode
+await setChronoMode(token, mac, true);
+```
+
+Schedule arrays are 336 integers (7 days × 48 half-hour slots):
+
+- `0` = OFF (stove off)
+- `1` = Economy (target economy temperature)
+- `2` = Comfort (target comfort temperature)
+
+Helper functions for building schedules:
+
+- `createEmptySchedule()` - Create an all-OFF schedule
+- `createWorkWeekSchedule(options)` - Create a typical work-week pattern
+- `setScheduleRange(schedule, day, startHour, endHour, value)` - Set a time range
+- `setWeekdayRange(schedule, startHour, endHour, value)` - Set Mon-Fri
+- `setWeekendRange(schedule, startHour, endHour, value)` - Set Sat-Sun
+- `timeToIndex(day, hour, minute)` - Convert time to array index
+- `indexToTime(index)` - Convert array index to time
+
+### Easy Timer
+
+```js
+import { setEasyTimer, getEasyTimer } from "edilkamin";
+
+// Set auto-shutoff timer (minutes)
+await setEasyTimer(token, mac, 120); // Turn off in 2 hours
+
+// Check timer status
+const timer = await getEasyTimer(token, mac);
+console.log(timer); // { active: true, time: 120 }
+
+// Disable timer
+await setEasyTimer(token, mac, 0);
+```
+
 ## Roadmap
 
 - [x] AWS Amplify/ Cognito authentication
@@ -217,6 +281,7 @@ getEnvironment3Temperature(token, mac); // Get zone 3 target
 - [x] fan speed control
 - [x] operating modes (Airkare, Relax, Standby, Auto)
 - [x] multi-zone temperature control
+- [x] scheduling (Chrono Mode, Easy Timer)
 
 ## Limitations
 

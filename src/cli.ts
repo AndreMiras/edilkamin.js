@@ -665,6 +665,46 @@ const createProgram = (): Command => {
         value: number,
       ) => api.setContinueCochleaLoading(jwtToken, mac, value === 1),
     },
+    {
+      commandName: "setEasyTimer",
+      description: "Set easy timer countdown in minutes (0 to disable)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setEasyTimer(jwtToken, mac, value),
+    },
+    {
+      commandName: "setChronoMode",
+      description: "Enable/disable chrono mode scheduling (1=on, 0=off)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setChronoMode(jwtToken, mac, value === 1),
+    },
+    {
+      commandName: "setChronoComfortTemperature",
+      description: "Set chrono mode comfort temperature target",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setChronoComfortTemperature(jwtToken, mac, value),
+    },
+    {
+      commandName: "setChronoEconomyTemperature",
+      description: "Set chrono mode economy temperature target",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setChronoEconomyTemperature(jwtToken, mac, value),
+    },
   ].forEach(({ commandName, description, setter }) => {
     addLegacyOption(
       addMacOption(
@@ -673,6 +713,51 @@ const createProgram = (): Command => {
         ).requiredOption("-v, --value <number>", "Value to set", parseFloat),
       ),
     ).action((options) => executeSetter(options, setter));
+  });
+
+  // Schedule array commands (accept JSON input)
+  addLegacyOption(
+    addMacOption(
+      addAuthOptions(
+        program
+          .command("setChronoTemperatureRanges")
+          .description("Set chrono temperature schedule (336-element array)"),
+      ).requiredOption(
+        "-s, --schedule <json>",
+        "Schedule array as JSON string (e.g., '[0,0,1,...]')",
+      ),
+    ),
+  ).action(async (options) => {
+    const { normalizedMac, jwtToken, api } = await initializeCommand(options);
+    const schedule = JSON.parse(options.schedule);
+    const result = await api.setChronoTemperatureRanges(
+      jwtToken,
+      normalizedMac,
+      schedule,
+    );
+    console.log(JSON.stringify(result, null, 2));
+  });
+
+  addLegacyOption(
+    addMacOption(
+      addAuthOptions(
+        program
+          .command("setChronoPowerRanges")
+          .description("Set chrono power schedule (336-element array)"),
+      ).requiredOption(
+        "-s, --schedule <json>",
+        "Schedule array as JSON string (e.g., '[0,0,1,...]')",
+      ),
+    ),
+  ).action(async (options) => {
+    const { normalizedMac, jwtToken, api } = await initializeCommand(options);
+    const schedule = JSON.parse(options.schedule);
+    const result = await api.setChronoPowerRanges(
+      jwtToken,
+      normalizedMac,
+      schedule,
+    );
+    console.log(JSON.stringify(result, null, 2));
   });
 
   // Indexed getter commands (require --index parameter)

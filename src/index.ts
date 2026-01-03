@@ -5,6 +5,8 @@ export { decompressBuffer, isBuffer, processResponse } from "./buffer-utils";
 export { API_URL, NEW_API_URL, OLD_API_URL } from "./constants";
 export {
   configure,
+  createEmptySchedule,
+  createWorkWeekSchedule,
   deriveAirkare,
   deriveAlarmHistory,
   deriveChronoMode,
@@ -15,7 +17,12 @@ export {
   deriveUsageAnalytics,
   getPhaseDescription,
   getSession,
+  indexToTime,
+  setScheduleRange,
+  setWeekdayRange,
+  setWeekendRange,
   signIn,
+  timeToIndex,
 } from "./library";
 export { normalizeMac } from "./mac-utils";
 export {
@@ -47,6 +54,7 @@ export {
   StatusCountersType,
   StatusType,
   TemperaturesType,
+  TimeSlot,
   TotalCountersType,
   UsageAnalyticsType,
   UserParametersType,
@@ -54,6 +62,9 @@ export {
 export {
   AlarmCode,
   AlarmDescriptions,
+  ChronoPowerSlot,
+  ChronoTemperatureSlot,
+  Day,
   getIgnitionSubPhaseDescription,
   getOperationalPhaseDescription,
   getStoveStateDescription,
@@ -76,4 +87,13 @@ export const {
   getEnvironmentTemperature,
   getTargetTemperature,
   setTargetTemperature,
+  // Scheduling
+  getChronoMode,
+  setChronoMode,
+  setChronoComfortTemperature,
+  setChronoEconomyTemperature,
+  setChronoTemperatureRanges,
+  setChronoPowerRanges,
+  getEasyTimer,
+  setEasyTimer,
 } = configure();

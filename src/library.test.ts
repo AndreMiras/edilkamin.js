@@ -6,6 +6,8 @@ import sinon from "sinon";
 import {
   configure,
   createAuthService,
+  createEmptySchedule,
+  createWorkWeekSchedule,
   deriveAirkare,
   deriveAlarmHistory,
   deriveChronoMode,
@@ -15,6 +17,11 @@ import {
   deriveRelax,
   deriveUsageAnalytics,
   getPhaseDescription,
+  indexToTime,
+  setScheduleRange,
+  setWeekdayRange,
+  setWeekendRange,
+  timeToIndex,
 } from "../src/library";
 import {
   getIgnitionSubPhaseDescription,
@@ -264,9 +271,15 @@ describe("library", () => {
       "getLanguage",
       "getPelletInReserve",
       "getPelletAutonomyTime",
-      // Mode getters
+      // Mode getters/setters
       "getChronoMode",
+      "setChronoMode",
+      "setChronoComfortTemperature",
+      "setChronoEconomyTemperature",
+      "setChronoTemperatureRanges",
+      "setChronoPowerRanges",
       "getEasyTimer",
+      "setEasyTimer",
       "getContinueCochleaLoading",
       "setContinueCochleaLoading",
       // Phase/state getters
@@ -666,6 +679,32 @@ describe("library", () => {
           value: 2,
         },
       },
+      {
+        method: "setChronoComfortTemperature",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          value: number,
+        ) => api.setChronoComfortTemperature(token, mac, value),
+        payload: {
+          name: "chrono_temperature_comfort",
+          value: 22,
+        },
+      },
+      {
+        method: "setChronoEconomyTemperature",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          value: number,
+        ) => api.setChronoEconomyTemperature(token, mac, value),
+        payload: {
+          name: "chrono_temperature_economy",
+          value: 18,
+        },
+      },
     ];
     setterTests.forEach(({ method, call, payload }) => {
       it(`should call fetch and send the correct payload for ${method}`, async () => {
@@ -761,6 +800,17 @@ describe("library", () => {
         truePayload: { name: "continuous_coclea_mode", value: 1 },
         falsePayload: { name: "continuous_coclea_mode", value: 0 },
       },
+      {
+        method: "setChronoMode",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          enabled: boolean,
+        ) => api.setChronoMode(token, mac, enabled),
+        truePayload: { name: "chrono_mode", value: 1 },
+        falsePayload: { name: "chrono_mode", value: 0 },
+      },
     ];
     booleanSetterTests.forEach(
       ({ method, call, truePayload, falsePayload }) => {
@@ -815,6 +865,100 @@ describe("library", () => {
 
       assert.ok(fetchStub.calledOnce);
       assert.deepEqual(result, { active: false, time: 45 });
+    });
+
+    // Tests for setEasyTimer
+    it("should send correct MQTT command to enable easy timer", async () => {
+      const minutes = 120;
+      fetchStub.resolves(mockResponse({ success: true }));
+      const api = configure("https://example.com/api/");
+      await api.setEasyTimer(expectedToken, "mockMacAddress", minutes);
+
+      assert.ok(fetchStub.calledOnce);
+      assert.equal(
+        fetchStub.firstCall.args[0],
+        "https://example.com/api/mqtt/command",
+      );
+      assert.deepEqual(fetchStub.firstCall.args[1], {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${expectedToken}`,
+        },
+        body: JSON.stringify({
+          mac_address: "mockMacAddress",
+          name: "easytimer",
+          value: minutes,
+        }),
+      });
+    });
+
+    it("should send correct MQTT command to disable easy timer", async () => {
+      fetchStub.resolves(mockResponse({ success: true }));
+      const api = configure("https://example.com/api/");
+      await api.setEasyTimer(expectedToken, "mockMacAddress", 0);
+
+      assert.ok(fetchStub.calledOnce);
+      const body = JSON.parse(fetchStub.firstCall.args[1].body);
+      assert.equal(body.name, "easytimer");
+      assert.equal(body.value, 0);
+    });
+
+    // Tests for setChronoTemperatureRanges
+    it("should send correct MQTT command for setChronoTemperatureRanges", async () => {
+      const schedule = new Array(336).fill(0);
+      schedule[16] = 2; // Monday 08:00 = comfort
+      fetchStub.resolves(mockResponse({ success: true }));
+      const api = configure("https://example.com/api/");
+      await api.setChronoTemperatureRanges(
+        expectedToken,
+        "mockMacAddress",
+        schedule,
+      );
+
+      assert.ok(fetchStub.calledOnce);
+      assert.equal(
+        fetchStub.firstCall.args[0],
+        "https://example.com/api/mqtt/command",
+      );
+      const body = JSON.parse(fetchStub.firstCall.args[1].body);
+      assert.equal(body.name, "chrono_temperature_ranges");
+      assert.deepEqual(body.value, schedule);
+    });
+
+    it("should throw error when setChronoTemperatureRanges receives wrong array length", () => {
+      const api = configure("https://example.com/api/");
+      assert.throws(
+        () =>
+          api.setChronoTemperatureRanges(expectedToken, "mockMac", [0, 1, 2]),
+        {
+          message: "Schedule array must contain exactly 336 integers (got 3)",
+        },
+      );
+    });
+
+    // Tests for setChronoPowerRanges
+    it("should send correct MQTT command for setChronoPowerRanges", async () => {
+      const schedule = new Array(336).fill(0);
+      schedule[240] = 1; // Saturday 00:00 = power1
+      fetchStub.resolves(mockResponse({ success: true }));
+      const api = configure("https://example.com/api/");
+      await api.setChronoPowerRanges(expectedToken, "mockMacAddress", schedule);
+
+      assert.ok(fetchStub.calledOnce);
+      const body = JSON.parse(fetchStub.firstCall.args[1].body);
+      assert.equal(body.name, "chrono_power_ranges");
+      assert.deepEqual(body.value, schedule);
+    });
+
+    it("should throw error when setChronoPowerRanges receives wrong array length", () => {
+      const api = configure("https://example.com/api/");
+      assert.throws(
+        () => api.setChronoPowerRanges(expectedToken, "mockMac", [1, 2]),
+        {
+          message: "Schedule array must contain exactly 336 integers (got 2)",
+        },
+      );
     });
   });
 
@@ -2091,6 +2235,173 @@ describe("library", () => {
             message: `HTTP ${status}: ${statusText}`,
           },
         );
+      });
+    });
+  });
+
+  describe("Schedule Helper Functions", () => {
+    describe("timeToIndex", () => {
+      it("should convert Monday 00:00 to index 0", () => {
+        assert.equal(timeToIndex(0, 0, 0), 0);
+      });
+
+      it("should convert Monday 08:00 to index 16", () => {
+        assert.equal(timeToIndex(0, 8, 0), 16);
+      });
+
+      it("should convert Monday 08:30 to index 17", () => {
+        assert.equal(timeToIndex(0, 8, 30), 17);
+      });
+
+      it("should convert Wednesday 14:30 to index 125", () => {
+        // Day 2 (Wednesday) * 48 + slot 29 (14:30) = 96 + 29 = 125
+        assert.equal(timeToIndex(2, 14, 30), 125);
+      });
+
+      it("should convert Sunday 23:30 to index 335", () => {
+        // Day 6 (Sunday) * 48 + slot 47 (23:30) = 288 + 47 = 335
+        assert.equal(timeToIndex(6, 23, 30), 335);
+      });
+
+      it("should round minutes >= 30 to half-hour slot", () => {
+        assert.equal(timeToIndex(0, 8, 45), 17); // Same as 08:30
+        assert.equal(timeToIndex(0, 8, 15), 16); // Same as 08:00
+      });
+    });
+
+    describe("indexToTime", () => {
+      it("should convert index 0 to Monday 00:00", () => {
+        assert.deepEqual(indexToTime(0), { day: 0, hour: 0, minute: 0 });
+      });
+
+      it("should convert index 16 to Monday 08:00", () => {
+        assert.deepEqual(indexToTime(16), { day: 0, hour: 8, minute: 0 });
+      });
+
+      it("should convert index 17 to Monday 08:30", () => {
+        assert.deepEqual(indexToTime(17), { day: 0, hour: 8, minute: 30 });
+      });
+
+      it("should convert index 125 to Wednesday 14:30", () => {
+        assert.deepEqual(indexToTime(125), { day: 2, hour: 14, minute: 30 });
+      });
+
+      it("should convert index 335 to Sunday 23:30", () => {
+        assert.deepEqual(indexToTime(335), { day: 6, hour: 23, minute: 30 });
+      });
+    });
+
+    describe("createEmptySchedule", () => {
+      it("should create an array of 336 zeros", () => {
+        const schedule = createEmptySchedule();
+        assert.equal(schedule.length, 336);
+        assert.ok(schedule.every((v) => v === 0));
+      });
+    });
+
+    describe("setScheduleRange", () => {
+      it("should set a range of hours on a specific day", () => {
+        const schedule = createEmptySchedule();
+        setScheduleRange(schedule, 0, 8, 10, 2); // Monday 08:00-10:00
+
+        // Check slots 16-19 (08:00, 08:30, 09:00, 09:30) are set to 2
+        assert.equal(schedule[16], 2);
+        assert.equal(schedule[17], 2);
+        assert.equal(schedule[18], 2);
+        assert.equal(schedule[19], 2);
+
+        // Check 10:00 (slot 20) is not set
+        assert.equal(schedule[20], 0);
+      });
+
+      it("should return the modified schedule", () => {
+        const schedule = createEmptySchedule();
+        const result = setScheduleRange(schedule, 0, 8, 9, 1);
+        assert.strictEqual(result, schedule);
+      });
+    });
+
+    describe("setWeekdayRange", () => {
+      it("should set the same range for Monday through Friday", () => {
+        const schedule = createEmptySchedule();
+        setWeekdayRange(schedule, 8, 9, 2); // 08:00-09:00 comfort
+
+        // Check all weekdays have the slots set
+        for (let day = 0; day < 5; day++) {
+          const slot = day * 48 + 16; // 08:00 slot for each day
+          assert.equal(schedule[slot], 2, `Day ${day} slot ${slot} not set`);
+          assert.equal(schedule[slot + 1], 2); // 08:30
+        }
+
+        // Check Saturday and Sunday are not set
+        assert.equal(schedule[5 * 48 + 16], 0); // Saturday 08:00
+        assert.equal(schedule[6 * 48 + 16], 0); // Sunday 08:00
+      });
+    });
+
+    describe("setWeekendRange", () => {
+      it("should set the same range for Saturday and Sunday", () => {
+        const schedule = createEmptySchedule();
+        setWeekendRange(schedule, 10, 12, 1); // 10:00-12:00 economy
+
+        // Check Saturday and Sunday have the slots set
+        for (let day = 5; day <= 6; day++) {
+          const slot = day * 48 + 20; // 10:00 slot for each day
+          assert.equal(schedule[slot], 1);
+          assert.equal(schedule[slot + 1], 1); // 10:30
+          assert.equal(schedule[slot + 2], 1); // 11:00
+          assert.equal(schedule[slot + 3], 1); // 11:30
+        }
+
+        // Check weekdays are not set
+        assert.equal(schedule[20], 0); // Monday 10:00
+      });
+    });
+
+    describe("createWorkWeekSchedule", () => {
+      it("should create a schedule with default work-week pattern", () => {
+        const schedule = createWorkWeekSchedule();
+
+        assert.equal(schedule.length, 336);
+
+        // Check weekday morning (default 06:00-09:00)
+        assert.equal(schedule[timeToIndex(0, 6, 0)], 2); // Monday 06:00
+        assert.equal(schedule[timeToIndex(0, 8, 30)], 2); // Monday 08:30
+
+        // Check weekday evening (default 17:00-22:00)
+        assert.equal(schedule[timeToIndex(1, 17, 0)], 2); // Tuesday 17:00
+        assert.equal(schedule[timeToIndex(1, 21, 30)], 2); // Tuesday 21:30
+
+        // Check midday on weekday is OFF
+        assert.equal(schedule[timeToIndex(2, 12, 0)], 0); // Wednesday 12:00
+
+        // Check weekend is comfort (default 08:00-23:00)
+        assert.equal(schedule[timeToIndex(5, 10, 0)], 2); // Saturday 10:00
+        assert.equal(schedule[timeToIndex(6, 20, 0)], 2); // Sunday 20:00
+      });
+
+      it("should accept custom times", () => {
+        const schedule = createWorkWeekSchedule({
+          morningStart: 5,
+          morningEnd: 7,
+          eveningStart: 19,
+          eveningEnd: 21,
+          weekendStart: 10,
+          weekendEnd: 20,
+        });
+
+        // Custom morning
+        assert.equal(schedule[timeToIndex(0, 5, 0)], 2);
+        assert.equal(schedule[timeToIndex(0, 7, 0)], 0); // End is exclusive
+
+        // Custom evening
+        assert.equal(schedule[timeToIndex(0, 19, 0)], 2);
+        assert.equal(schedule[timeToIndex(0, 21, 0)], 0);
+
+        // Custom weekend
+        assert.equal(schedule[timeToIndex(5, 10, 0)], 2);
+        assert.equal(schedule[timeToIndex(5, 9, 30)], 0); // Before start
+        assert.equal(schedule[timeToIndex(5, 20, 0)], 0); // At end (exclusive)
       });
     });
   });

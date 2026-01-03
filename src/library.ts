@@ -760,6 +760,421 @@ const getEasyTimer =
     return deriveEasyTimer(info);
   };
 
+const setEasyTimer =
+  (baseURL: string) =>
+  /**
+   * Sets the Easy Timer countdown in minutes. When the timer expires, the stove
+   * automatically turns off.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number} minutes - Timer duration in minutes (0 to disable).
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   *
+   * @example
+   * // Set a 2-hour auto-shutoff timer
+   * await setEasyTimer(token, mac, 120);
+   *
+   * @example
+   * // Disable the timer
+   * await setEasyTimer(token, mac, 0);
+   */
+  (jwtToken: string, macAddress: string, minutes: number) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "easytimer",
+      value: minutes,
+    });
+
+const setChronoMode =
+  (baseURL: string) =>
+  /**
+   * Enables or disables Chrono Mode (scheduled programming). When enabled,
+   * the stove follows the configured temperature or power schedule.
+   *
+   * Note: This only enables/disables the schedule. Use setChronoTemperatureRanges()
+   * or setChronoPowerRanges() to configure the actual schedule.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {boolean} enabled - Whether to enable chrono mode.
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   *
+   * @example
+   * // Enable the configured schedule
+   * await setChronoMode(token, mac, true);
+   *
+   * @example
+   * // Disable scheduling (manual control)
+   * await setChronoMode(token, mac, false);
+   */
+  (jwtToken: string, macAddress: string, enabled: boolean) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "chrono_mode",
+      value: enabled ? 1 : 0,
+    });
+
+const setChronoComfortTemperature =
+  (baseURL: string) =>
+  /**
+   * Sets the comfort temperature target for Chrono Mode. When a schedule slot
+   * is set to "Comfort" (value 2), the stove will target this temperature.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number} temperature - Target temperature in degrees (based on device unit setting).
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   *
+   * @example
+   * // Set comfort temperature to 22°C
+   * await setChronoComfortTemperature(token, mac, 22);
+   */
+  (jwtToken: string, macAddress: string, temperature: number) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "chrono_temperature_comfort",
+      value: temperature,
+    });
+
+const setChronoEconomyTemperature =
+  (baseURL: string) =>
+  /**
+   * Sets the economy temperature target for Chrono Mode. When a schedule slot
+   * is set to "Economy" (value 1), the stove will target this temperature.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number} temperature - Target temperature in degrees (based on device unit setting).
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   *
+   * @example
+   * // Set economy temperature to 18°C
+   * await setChronoEconomyTemperature(token, mac, 18);
+   */
+  (jwtToken: string, macAddress: string, temperature: number) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "chrono_temperature_economy",
+      value: temperature,
+    });
+
+/**
+ * Schedule Array Format Documentation
+ *
+ * Chrono schedules use 336-integer arrays to represent weekly programming:
+ * - 7 days (Monday through Sunday)
+ * - 48 time slots per day (30-minute intervals)
+ * - Array indexing: `day * 48 + slot`
+ *
+ * Time Slot Calculation:
+ * - Each day divided into 48 slots (00:00-23:30)
+ * - Slot index = hour * 2 + (minute >= 30 ? 1 : 0)
+ * - Example: Monday 08:00 = day 0, slot 16 → array[16]
+ * - Example: Wednesday 14:30 = day 2, slot 29 → array[2*48+29] = array[125]
+ *
+ * Schedule Values:
+ * - 0 = OFF (stove off during this time slot)
+ * - 1 = Economy/Power1 (lower temperature or power level 1)
+ * - 2 = Comfort/Power5 (higher temperature or power level 5)
+ *
+ * Temperature vs Power Mode:
+ * - If nvm.user_parameters.is_auto === true: Use temperature_ranges
+ * - If nvm.user_parameters.is_auto === false: Use power_ranges
+ */
+
+const setChronoTemperatureRanges =
+  (baseURL: string) =>
+  /**
+   * Sets the weekly temperature schedule for Chrono Mode. The schedule is a
+   * 336-integer array representing 7 days × 48 time slots (30-min intervals).
+   *
+   * This is used when the device is in auto/temperature mode (is_auto = true).
+   * For power mode, use setChronoPowerRanges() instead.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number[]} ranges - Array of 336 integers (values: 0=OFF, 1=Economy, 2=Comfort).
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   *
+   * @throws {Error} If ranges array length is not exactly 336.
+   *
+   * @example
+   * // Simple schedule: weekdays 08:00-18:00 Comfort, rest OFF
+   * const schedule = new Array(336).fill(0);
+   * for (let day = 0; day < 5; day++) { // Mon-Fri
+   *   for (let hour = 8; hour < 18; hour++) {
+   *     schedule[day * 48 + hour * 2] = 2;     // On the hour
+   *     schedule[day * 48 + hour * 2 + 1] = 2; // Half past
+   *   }
+   * }
+   * await setChronoTemperatureRanges(token, mac, schedule);
+   */
+  (jwtToken: string, macAddress: string, ranges: number[]) => {
+    if (ranges.length !== 336) {
+      throw new Error(
+        `Schedule array must contain exactly 336 integers (got ${ranges.length})`,
+      );
+    }
+    return mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "chrono_temperature_ranges",
+      value: ranges,
+    });
+  };
+
+const setChronoPowerRanges =
+  (baseURL: string) =>
+  /**
+   * Sets the weekly power level schedule for Chrono Mode. The schedule is a
+   * 336-integer array representing 7 days × 48 time slots (30-min intervals).
+   *
+   * This is used when the device is in manual/power mode (is_auto = false).
+   * For temperature mode, use setChronoTemperatureRanges() instead.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {number[]} ranges - Array of 336 integers (values: 0=OFF, 1=Power1, 2=Power5).
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   *
+   * @throws {Error} If ranges array length is not exactly 336.
+   *
+   * @example
+   * // Weekend schedule: variable power throughout the day
+   * const schedule = new Array(336).fill(0);
+   * const saturday = 5, sunday = 6;
+   *
+   * // Saturday 07:00-12:00 at Power 1 (economy)
+   * for (let hour = 7; hour < 12; hour++) {
+   *   schedule[saturday * 48 + hour * 2] = 1;
+   *   schedule[saturday * 48 + hour * 2 + 1] = 1;
+   * }
+   *
+   * await setChronoPowerRanges(token, mac, schedule);
+   */
+  (jwtToken: string, macAddress: string, ranges: number[]) => {
+    if (ranges.length !== 336) {
+      throw new Error(
+        `Schedule array must contain exactly 336 integers (got ${ranges.length})`,
+      );
+    }
+    return mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "chrono_power_ranges",
+      value: ranges,
+    });
+  };
+
+// ============================================================================
+// Schedule Helper Functions
+// ============================================================================
+
+/**
+ * Constants for schedule calculations.
+ */
+const SLOTS_PER_DAY = 48;
+const DAYS_PER_WEEK = 7;
+const SCHEDULE_LENGTH = SLOTS_PER_DAY * DAYS_PER_WEEK; // 336
+
+/**
+ * Converts a day and time to a schedule array index.
+ *
+ * @param {number} day - Day of week (0=Monday, 6=Sunday).
+ * @param {number} hour - Hour of day (0-23).
+ * @param {number} minute - Minute (0-59, will be rounded to nearest 30).
+ * @returns {number} - Index in the 336-element schedule array.
+ *
+ * @example
+ * // Monday 08:00
+ * timeToIndex(0, 8, 0); // Returns 16
+ *
+ * @example
+ * // Wednesday 14:30
+ * timeToIndex(2, 14, 30); // Returns 125
+ */
+export const timeToIndex = (
+  day: number,
+  hour: number,
+  minute: number,
+): number => {
+  const slot = hour * 2 + (minute >= 30 ? 1 : 0);
+  return day * SLOTS_PER_DAY + slot;
+};
+
+/**
+ * Converts a schedule array index to day and time.
+ *
+ * @param {number} index - Index in the schedule array (0-335).
+ * @returns {{ day: number; hour: number; minute: 0 | 30 }} - Day, hour, and minute.
+ *
+ * @example
+ * // Index 16 = Monday 08:00
+ * indexToTime(16); // Returns { day: 0, hour: 8, minute: 0 }
+ *
+ * @example
+ * // Index 125 = Wednesday 14:30
+ * indexToTime(125); // Returns { day: 2, hour: 14, minute: 30 }
+ */
+export const indexToTime = (
+  index: number,
+): { day: number; hour: number; minute: 0 | 30 } => {
+  const day = Math.floor(index / SLOTS_PER_DAY);
+  const slot = index % SLOTS_PER_DAY;
+  const hour = Math.floor(slot / 2);
+  const minute = (slot % 2 === 0 ? 0 : 30) as 0 | 30;
+  return { day, hour, minute };
+};
+
+/**
+ * Creates an empty schedule array (all slots set to OFF).
+ *
+ * @returns {number[]} - A 336-element array filled with zeros.
+ *
+ * @example
+ * const schedule = createEmptySchedule();
+ * // schedule is [0, 0, 0, ...] (336 zeros)
+ */
+export const createEmptySchedule = (): number[] => {
+  return new Array(SCHEDULE_LENGTH).fill(0);
+};
+
+/**
+ * Sets a range of time slots in a schedule array.
+ * Modifies the schedule array in place and returns it.
+ *
+ * @param {number[]} schedule - The schedule array to modify.
+ * @param {number} day - Day of week (0=Monday, 6=Sunday).
+ * @param {number} startHour - Starting hour (0-23).
+ * @param {number} endHour - Ending hour (0-24, exclusive).
+ * @param {number} value - Value to set (0=OFF, 1=Economy/Power1, 2=Comfort/Power5).
+ * @returns {number[]} - The modified schedule array.
+ *
+ * @example
+ * // Set Monday 08:00-18:00 to Comfort
+ * const schedule = createEmptySchedule();
+ * setScheduleRange(schedule, 0, 8, 18, 2);
+ */
+export const setScheduleRange = (
+  schedule: number[],
+  day: number,
+  startHour: number,
+  endHour: number,
+  value: number,
+): number[] => {
+  for (let hour = startHour; hour < endHour; hour++) {
+    schedule[timeToIndex(day, hour, 0)] = value;
+    schedule[timeToIndex(day, hour, 30)] = value;
+  }
+  return schedule;
+};
+
+/**
+ * Sets the same time range for all weekdays (Monday-Friday).
+ *
+ * @param {number[]} schedule - The schedule array to modify.
+ * @param {number} startHour - Starting hour (0-23).
+ * @param {number} endHour - Ending hour (0-24, exclusive).
+ * @param {number} value - Value to set (0=OFF, 1=Economy/Power1, 2=Comfort/Power5).
+ * @returns {number[]} - The modified schedule array.
+ *
+ * @example
+ * // Set weekdays 08:00-18:00 to Comfort (2)
+ * const schedule = createEmptySchedule();
+ * setWeekdayRange(schedule, 8, 18, 2);
+ */
+export const setWeekdayRange = (
+  schedule: number[],
+  startHour: number,
+  endHour: number,
+  value: number,
+): number[] => {
+  for (let day = 0; day < 5; day++) {
+    // Monday (0) to Friday (4)
+    setScheduleRange(schedule, day, startHour, endHour, value);
+  }
+  return schedule;
+};
+
+/**
+ * Sets the same time range for weekend days (Saturday-Sunday).
+ *
+ * @param {number[]} schedule - The schedule array to modify.
+ * @param {number} startHour - Starting hour (0-23).
+ * @param {number} endHour - Ending hour (0-24, exclusive).
+ * @param {number} value - Value to set (0=OFF, 1=Economy/Power1, 2=Comfort/Power5).
+ * @returns {number[]} - The modified schedule array.
+ *
+ * @example
+ * // Set weekends 09:00-22:00 to Comfort (2)
+ * const schedule = createEmptySchedule();
+ * setWeekendRange(schedule, 9, 22, 2);
+ */
+export const setWeekendRange = (
+  schedule: number[],
+  startHour: number,
+  endHour: number,
+  value: number,
+): number[] => {
+  for (let day = 5; day <= 6; day++) {
+    // Saturday (5) and Sunday (6)
+    setScheduleRange(schedule, day, startHour, endHour, value);
+  }
+  return schedule;
+};
+
+/**
+ * Creates a typical work-week schedule: comfort during weekday mornings/evenings,
+ * economy at night, and comfort all day on weekends.
+ *
+ * @param {Object} options - Schedule configuration options.
+ * @param {number} options.morningStart - Hour to start morning comfort (default: 6).
+ * @param {number} options.morningEnd - Hour to end morning comfort (default: 9).
+ * @param {number} options.eveningStart - Hour to start evening comfort (default: 17).
+ * @param {number} options.eveningEnd - Hour to end evening comfort (default: 22).
+ * @param {number} options.weekendStart - Hour to start weekend comfort (default: 8).
+ * @param {number} options.weekendEnd - Hour to end weekend comfort (default: 23).
+ * @returns {number[]} - A 336-element schedule array.
+ *
+ * @example
+ * // Create default work-week schedule
+ * const schedule = createWorkWeekSchedule();
+ *
+ * @example
+ * // Custom times
+ * const schedule = createWorkWeekSchedule({
+ *   morningStart: 5,
+ *   morningEnd: 8,
+ *   eveningStart: 18,
+ *   eveningEnd: 23,
+ * });
+ */
+export const createWorkWeekSchedule = (
+  options: {
+    morningStart?: number;
+    morningEnd?: number;
+    eveningStart?: number;
+    eveningEnd?: number;
+    weekendStart?: number;
+    weekendEnd?: number;
+  } = {},
+): number[] => {
+  const {
+    morningStart = 6,
+    morningEnd = 9,
+    eveningStart = 17,
+    eveningEnd = 22,
+    weekendStart = 8,
+    weekendEnd = 23,
+  } = options;
+
+  const schedule = createEmptySchedule();
+
+  // Weekday mornings: comfort
+  setWeekdayRange(schedule, morningStart, morningEnd, 2);
+
+  // Weekday evenings: comfort
+  setWeekdayRange(schedule, eveningStart, eveningEnd, 2);
+
+  // Weekends: comfort all day
+  setWeekendRange(schedule, weekendStart, weekendEnd, 2);
+
+  return schedule;
+};
+
 /**
  * Derives the Continue Cochlea Loading (continuous cochlea mode) status
  * from an existing DeviceInfo response.
@@ -1314,9 +1729,15 @@ const configure = (baseURL: string = API_URL) => ({
   getLanguage: getLanguage(baseURL),
   getPelletInReserve: getPelletInReserve(baseURL),
   getPelletAutonomyTime: getPelletAutonomyTime(baseURL),
-  // Mode getters
+  // Mode getters/setters
   getChronoMode: getChronoMode(baseURL),
+  setChronoMode: setChronoMode(baseURL),
+  setChronoComfortTemperature: setChronoComfortTemperature(baseURL),
+  setChronoEconomyTemperature: setChronoEconomyTemperature(baseURL),
+  setChronoTemperatureRanges: setChronoTemperatureRanges(baseURL),
+  setChronoPowerRanges: setChronoPowerRanges(baseURL),
   getEasyTimer: getEasyTimer(baseURL),
+  setEasyTimer: setEasyTimer(baseURL),
   getContinueCochleaLoading: getContinueCochleaLoading(baseURL),
   setContinueCochleaLoading: setContinueCochleaLoading(baseURL),
   // Phase/state getters
