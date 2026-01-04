@@ -688,7 +688,7 @@ describe("library", () => {
           value: number,
         ) => api.setChronoComfortTemperature(token, mac, value),
         payload: {
-          name: "chrono_temperature_comfort",
+          name: "chrono_comfort_temperature",
           value: 22,
         },
       },
@@ -701,7 +701,7 @@ describe("library", () => {
           value: number,
         ) => api.setChronoEconomyTemperature(token, mac, value),
         payload: {
-          name: "chrono_temperature_economy",
+          name: "chrono_economy_temperature",
           value: 18,
         },
       },

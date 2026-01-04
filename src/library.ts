@@ -830,7 +830,7 @@ const setChronoComfortTemperature =
    */
   (jwtToken: string, macAddress: string, temperature: number) =>
     mqttCommand(baseURL)(jwtToken, macAddress, {
-      name: "chrono_temperature_comfort",
+      name: "chrono_comfort_temperature",
       value: temperature,
     });
 
@@ -851,7 +851,7 @@ const setChronoEconomyTemperature =
    */
   (jwtToken: string, macAddress: string, temperature: number) =>
     mqttCommand(baseURL)(jwtToken, macAddress, {
-      name: "chrono_temperature_economy",
+      name: "chrono_economy_temperature",
       value: temperature,
     });
 
