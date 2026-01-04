@@ -15,6 +15,7 @@ import {
   deriveEasyTimer,
   derivePhaseDescription,
   deriveRelax,
+  deriveSound,
   deriveUsageAnalytics,
   getPhaseDescription,
   indexToTime,
@@ -250,6 +251,8 @@ describe("library", () => {
       "getAirkare",
       "setRelax",
       "getRelax",
+      "setSound",
+      "getSound",
       "setStandby",
       "getStandby",
       "setStandbyTime",
@@ -357,6 +360,7 @@ describe("library", () => {
           standby_waiting_time: 30,
           is_auto: true,
           is_fahrenheit: false,
+          is_sound_active: true,
           language: 2,
         },
       },
@@ -527,6 +531,12 @@ describe("library", () => {
         call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
           api.getRelax(token, mac),
         expectedResult: false,
+      },
+      {
+        method: "getSound",
+        call: (api: ReturnType<typeof configure>, token: string, mac: string) =>
+          api.getSound(token, mac),
+        expectedResult: true,
       },
       {
         method: "getChronoMode",
@@ -755,6 +765,17 @@ describe("library", () => {
         ) => api.setRelax(token, mac, enabled),
         truePayload: { name: "relax_mode", value: true },
         falsePayload: { name: "relax_mode", value: false },
+      },
+      {
+        method: "setSound",
+        call: (
+          api: ReturnType<typeof configure>,
+          token: string,
+          mac: string,
+          enabled: boolean,
+        ) => api.setSound(token, mac, enabled),
+        truePayload: { name: "radio_control_sound", value: true },
+        falsePayload: { name: "radio_control_sound", value: false },
       },
       {
         method: "setStandby",
@@ -1837,7 +1858,7 @@ describe("library", () => {
         easytimer: { time: 30 },
       },
       nvm: {
-        user_parameters: {},
+        user_parameters: { is_sound_active: true },
         total_counters: {},
         service_counters: {},
         alarms_log: { number: 0, index: 0, alarms: [] },
@@ -1855,6 +1876,12 @@ describe("library", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = deriveRelax(mockDeviceInfoForModes as any);
       assert.equal(result, false);
+    });
+
+    it("should derive Sound status from device info", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = deriveSound(mockDeviceInfoForModes as any);
+      assert.equal(result, true);
     });
 
     it("should derive Chrono mode status from device info", () => {

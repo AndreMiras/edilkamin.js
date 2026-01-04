@@ -358,6 +358,15 @@ const createProgram = (): Command => {
       ) => api.getRelax(jwtToken, mac),
     },
     {
+      commandName: "getSound",
+      description: "Retrieve control beep sound setting",
+      getter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+      ) => api.getSound(jwtToken, mac),
+    },
+    {
       commandName: "getChronoMode",
       description: "Retrieve Chrono (scheduled programming) mode status",
       getter: (
@@ -583,6 +592,16 @@ const createProgram = (): Command => {
         mac: string,
         value: number,
       ) => api.setRelax(jwtToken, mac, value === 1),
+    },
+    {
+      commandName: "setSound",
+      description: "Enable/disable control beep sounds (1=on, 0=off)",
+      setter: (
+        api: ReturnType<typeof configure>,
+        jwtToken: string,
+        mac: string,
+        value: number,
+      ) => api.setSound(jwtToken, mac, value === 1),
     },
     {
       commandName: "setStandby",

@@ -404,6 +404,51 @@ const getRelax =
     return deriveRelax(info);
   };
 
+const setSound =
+  (baseURL: string) =>
+  /**
+   * Enables or disables control beep sounds.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @param {boolean} enabled - Whether to enable sound.
+   * @returns {Promise<unknown>} - A promise that resolves to the command response.
+   */
+  (jwtToken: string, macAddress: string, enabled: boolean) =>
+    mqttCommand(baseURL)(jwtToken, macAddress, {
+      name: "radio_control_sound",
+      value: enabled,
+    });
+
+/**
+ * Derives the sound (control beep) status from an existing DeviceInfo response.
+ * This is a pure function that extracts data without API calls.
+ *
+ * @param {DeviceInfoType} deviceInfo - The device info response object.
+ * @returns {boolean} - Whether control beep sounds are enabled.
+ *
+ * @example
+ * const info = await api.deviceInfo(token, mac);
+ * const isSoundActive = deriveSound(info);
+ */
+export const deriveSound = (deviceInfo: DeviceInfoType): boolean => {
+  return deviceInfo.nvm.user_parameters.is_sound_active;
+};
+
+const getSound =
+  (baseURL: string) =>
+  /**
+   * Retrieves the current sound (control beep) setting.
+   *
+   * @param {string} jwtToken - The JWT token for authentication.
+   * @param {string} macAddress - The MAC address of the device.
+   * @returns {Promise<boolean>} - A promise that resolves to the sound status.
+   */
+  async (jwtToken: string, macAddress: string): Promise<boolean> => {
+    const info = await deviceInfo(baseURL)(jwtToken, macAddress);
+    return deriveSound(info);
+  };
+
 const setStandby =
   (baseURL: string) =>
   /**
@@ -1708,6 +1753,8 @@ const configure = (baseURL: string = API_URL) => ({
   getAirkare: getAirkare(baseURL),
   setRelax: setRelax(baseURL),
   getRelax: getRelax(baseURL),
+  setSound: setSound(baseURL),
+  getSound: getSound(baseURL),
   setStandby: setStandby(baseURL),
   getStandby: getStandby(baseURL),
   setStandbyTime: setStandbyTime(baseURL),
