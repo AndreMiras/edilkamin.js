@@ -46,6 +46,36 @@ export interface ModbusResponse {
   isError: boolean;
 }
 
+/**
+ * Operation-tagged BLE response payload emitted by consuming apps.
+ */
+export interface OperationTaggedPayload {
+  /** Operation name associated with this response payload */
+  operation: string;
+  /** Encrypted BLE response payload bytes */
+  payload: Uint8Array;
+}
+
+/**
+ * Parsed response bound to its originating operation.
+ */
+export interface OperationTaggedResponse<TResponse> {
+  /** Operation name associated with this response payload */
+  operation: string;
+  /** Parsed response data */
+  response: TResponse;
+}
+
+/**
+ * readWifiStatus operation parse result.
+ */
+export interface ReadWifiStatusResponse {
+  /** Operation name for this specialization */
+  operation: "readWifiStatus";
+  /** Whether Wi-Fi status is connected */
+  isConnected: boolean;
+}
+
 // =============================================================================
 // Constants (private)
 // =============================================================================
@@ -363,6 +393,109 @@ export const parseResponse = async (
     functionCode,
     data: modbusResponse.slice(2, 6),
     isError: false,
+  };
+};
+
+/**
+ * Normalize and validate an operation-tagged BLE payload.
+ *
+ * @param taggedPayload - Operation name and encrypted payload bytes
+ * @returns Normalized operation-tagged payload
+ */
+export const normalizeOperationTaggedPayload = (
+  taggedPayload: OperationTaggedPayload,
+): OperationTaggedPayload => {
+  const normalizedOperation = taggedPayload.operation.trim();
+
+  if (normalizedOperation.length === 0) {
+    throw new Error("Operation must be a non-empty string");
+  }
+
+  if (taggedPayload.payload.length === 0) {
+    throw new Error("Payload must not be empty");
+  }
+
+  return {
+    operation: normalizedOperation,
+    payload: taggedPayload.payload,
+  };
+};
+
+/**
+ * Parse an operation-tagged BLE payload with a caller-provided parser.
+ *
+ * @param taggedPayload - Operation name and encrypted payload bytes
+ * @param parser - Parser to apply on payload bytes
+ * @returns Operation-tagged parsed response
+ */
+export const parseOperationTaggedResponse = async <TResponse>(
+  taggedPayload: OperationTaggedPayload,
+  parser: (payload: Uint8Array) => TResponse | Promise<TResponse>,
+): Promise<OperationTaggedResponse<TResponse>> => {
+  const normalizedPayload = normalizeOperationTaggedPayload(taggedPayload);
+  const response = await parser(normalizedPayload.payload);
+
+  return {
+    operation: normalizedPayload.operation,
+    response,
+  };
+};
+
+/**
+ * Parse an operation-tagged BLE payload as a Modbus response.
+ *
+ * @param taggedPayload - Operation name and encrypted payload bytes
+ * @returns Operation-tagged parsed Modbus response
+ */
+export const parseModbusOperationResponse = async (
+  taggedPayload: OperationTaggedPayload,
+): Promise<OperationTaggedResponse<ModbusResponse>> => {
+  return parseOperationTaggedResponse(taggedPayload, parseResponse);
+};
+
+/**
+ * Parse decrypted payload bytes for readWifiStatus connectivity.
+ *
+ * Decrypted packets keep protocol metadata in bytes 0-19, so this parser checks
+ * string payload from byte 20 onward.
+ *
+ * @param decryptedPayload - Decrypted response payload bytes
+ * @returns true when payload contains STATUS=CONNECTED
+ */
+export const parseReadWifiStatusPayload = (
+  decryptedPayload: Uint8Array,
+): boolean => {
+  const payloadBytes = decryptedPayload.slice(20);
+  const payloadText = String.fromCharCode(...payloadBytes);
+  return payloadText.includes("STATUS=CONNECTED");
+};
+
+/**
+ * Parse operation-tagged readWifiStatus payloads.
+ *
+ * For protocol packets, 32-byte payloads are decrypted first, then parsed with
+ * readWifiStatus payload conventions.
+ *
+ * @param taggedPayload - Operation name and payload bytes
+ * @returns readWifiStatus operation parse result
+ */
+export const parseReadWifiStatusResponse = async (
+  taggedPayload: OperationTaggedPayload,
+): Promise<ReadWifiStatusResponse> => {
+  const normalizedPayload = normalizeOperationTaggedPayload(taggedPayload);
+
+  if (normalizedPayload.operation !== "readWifiStatus") {
+    throw new Error("Operation must be readWifiStatus");
+  }
+
+  const decryptedPayload =
+    normalizedPayload.payload.length === 32
+      ? await aesDecrypt(normalizedPayload.payload)
+      : normalizedPayload.payload;
+
+  return {
+    operation: "readWifiStatus",
+    isConnected: parseReadWifiStatusPayload(decryptedPayload),
   };
 };
 

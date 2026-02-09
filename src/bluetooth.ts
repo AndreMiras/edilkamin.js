@@ -120,8 +120,13 @@ export {
   aesEncrypt,
   crc16Modbus,
   createPacket,
+  normalizeOperationTaggedPayload,
   // Constants
   NOTIFY_CHARACTERISTIC_UUID,
+  parseModbusOperationResponse,
+  parseOperationTaggedResponse,
+  parseReadWifiStatusPayload,
+  parseReadWifiStatusResponse,
   parseResponse,
   // Commands
   parsers,
@@ -133,4 +138,9 @@ export {
 } from "./bluetooth-protocol";
 
 // Protocol types
-export type { ModbusResponse } from "./bluetooth-protocol";
+export type {
+  ModbusResponse,
+  OperationTaggedPayload,
+  OperationTaggedResponse,
+  ReadWifiStatusResponse,
+} from "./bluetooth-protocol";

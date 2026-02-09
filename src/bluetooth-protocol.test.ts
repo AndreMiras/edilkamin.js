@@ -6,10 +6,17 @@ import {
   crc16Modbus,
   createPacket,
   ModbusResponse,
+  normalizeOperationTaggedPayload,
   NOTIFY_CHARACTERISTIC_UUID,
+  OperationTaggedPayload,
+  parseModbusOperationResponse,
+  parseOperationTaggedResponse,
+  parseReadWifiStatusPayload,
+  parseReadWifiStatusResponse,
   parseResponse,
   parsers,
   readCommands,
+  ReadWifiStatusResponse,
   SERVICE_UUID,
   WRITE_CHARACTERISTIC_UUID,
   writeCommands,
@@ -191,6 +198,150 @@ describe("bluetooth-protocol", () => {
       assert.ok(typeof parsed.slaveAddress === "number");
       assert.ok(typeof parsed.functionCode === "number");
       assert.ok(typeof parsed.isError === "boolean");
+    });
+  });
+
+  describe("operation-tagged helpers", () => {
+    it("normalizes operation by trimming whitespace", () => {
+      const payload = new Uint8Array([0x01]);
+      const normalized = normalizeOperationTaggedPayload({
+        operation: "  readState  ",
+        payload,
+      });
+
+      assert.equal(normalized.operation, "readState");
+      assert.deepEqual(normalized.payload, payload);
+    });
+
+    it("rejects empty operation", () => {
+      assert.throws(
+        () =>
+          normalizeOperationTaggedPayload({
+            operation: "   ",
+            payload: new Uint8Array([0x01]),
+          }),
+        /Operation must be a non-empty string/,
+      );
+    });
+
+    it("rejects empty payload", () => {
+      assert.throws(
+        () =>
+          normalizeOperationTaggedPayload({
+            operation: "readState",
+            payload: new Uint8Array([]),
+          }),
+        /Payload must not be empty/,
+      );
+    });
+
+    it("parses operation-tagged payload with sync parser", async () => {
+      const payload = new Uint8Array([0xaa, 0xbb]);
+      const parsed = await parseOperationTaggedResponse(
+        {
+          operation: "readState",
+          payload,
+        },
+        (value) => value[0] + value[1],
+      );
+
+      assert.equal(parsed.operation, "readState");
+      assert.equal(parsed.response, 0x165);
+    });
+
+    it("parses operation-tagged payload with async parser", async () => {
+      const payload = new Uint8Array([0xaa, 0xbb]);
+      const parsed = await parseOperationTaggedResponse(
+        {
+          operation: "readState",
+          payload,
+        },
+        async (value) => value.length,
+      );
+
+      assert.equal(parsed.operation, "readState");
+      assert.equal(parsed.response, 2);
+    });
+
+    it("parseModbusOperationResponse preserves operation and parses payload", async () => {
+      const payload = await createPacket(readCommands.power);
+      const taggedPayload: OperationTaggedPayload = {
+        operation: "readPower",
+        payload,
+      };
+
+      const parsed = await parseModbusOperationResponse(taggedPayload);
+      const expected = await parseResponse(payload);
+
+      assert.equal(parsed.operation, "readPower");
+      assert.deepEqual(parsed.response, expected);
+    });
+
+    describe("parseReadWifiStatusPayload", () => {
+      it("returns true when decrypted payload contains STATUS=CONNECTED", () => {
+        const payloadText = "STATUS=CONNECTED";
+        const payload = new Uint8Array(20 + payloadText.length);
+        payload.set(Buffer.from(payloadText, "latin1"), 20);
+
+        assert.equal(parseReadWifiStatusPayload(payload), true);
+      });
+
+      it("returns false for non-connected status", () => {
+        const payloadText = "STATUS=DISCONNECTED";
+        const payload = new Uint8Array(20 + payloadText.length);
+        payload.set(Buffer.from(payloadText, "latin1"), 20);
+
+        assert.equal(parseReadWifiStatusPayload(payload), false);
+      });
+
+      it("returns false when status is missing or invalid", () => {
+        const payloadText = "NO_STATUS_PRESENT";
+        const payload = new Uint8Array(20 + payloadText.length);
+        payload.set(Buffer.from(payloadText, "latin1"), 20);
+
+        assert.equal(parseReadWifiStatusPayload(payload), false);
+      });
+    });
+
+    describe("parseReadWifiStatusResponse", () => {
+      it("parses readWifiStatus operation payloads", async () => {
+        const payloadText = "STATUS=CONNECTED";
+        const payload = new Uint8Array(20 + payloadText.length);
+        payload.set(Buffer.from(payloadText, "latin1"), 20);
+
+        const parsed: ReadWifiStatusResponse =
+          await parseReadWifiStatusResponse({
+            operation: "readWifiStatus",
+            payload,
+          });
+
+        assert.equal(parsed.operation, "readWifiStatus");
+        assert.equal(parsed.isConnected, true);
+      });
+
+      it("returns false when readWifiStatus payload is not connected", async () => {
+        const payloadText = "STATUS=DISCONNECTED";
+        const payload = new Uint8Array(20 + payloadText.length);
+        payload.set(Buffer.from(payloadText, "latin1"), 20);
+
+        const parsed = await parseReadWifiStatusResponse({
+          operation: "readWifiStatus",
+          payload,
+        });
+
+        assert.equal(parsed.isConnected, false);
+      });
+
+      it("rejects non-readWifiStatus operations", async () => {
+        await assert.rejects(
+          () =>
+            parseReadWifiStatusResponse({
+              operation: "readState",
+              payload: new Uint8Array([0x01]),
+            }),
+          /Operation must be readWifiStatus/,
+        );
+      });
     });
   });
 
