@@ -82,7 +82,7 @@ const scanForDevices = async (): Promise<DiscoveredDevice[]> => {
       }
       throw error;
     }
-    throw new Error("Unknown error during Bluetooth scan");
+    throw new Error("Unknown error during Bluetooth scan", { cause: error });
   }
 };
 
