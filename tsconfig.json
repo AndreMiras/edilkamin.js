@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es6",
     "lib": ["ES6", "ES2022.Error", "DOM"],
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "outDir": "dist",
     "rootDir": ".",
     "strict": true,
@@ -11,7 +11,8 @@
     "resolveJsonModule": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "preserveConstEnums": true
+    "preserveConstEnums": true,
+    "types": ["node", "mocha", "web-bluetooth"]
   },
   "include": ["src/**/*.ts", "package.json"]
 }

@@ -20,6 +20,7 @@ jobs:
       - run: yarn cli --help
       - run: yarn build
       - run: node dist/cjs/src/cli.js --help
+      - run: yarn test:cjs-consumer
       - name: Verify CLI binary
         run: |
           test -f dist/cjs/src/cli.js

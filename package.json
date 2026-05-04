@@ -32,6 +32,7 @@
     "cli:debug": "node --inspect --require ts-node/register/transpile-only src/cli.ts",
     "test": "nyc mocha --require ts-node/register src/*.test.ts",
     "test:debug": "nyc mocha --require ts-node/register/transpile-only --inspect src/*.test.ts",
+    "test:cjs-consumer": "node -e \"const pkg = require('./dist/cjs/src/index.js'); if (typeof pkg.configure !== 'function') throw new Error('configure export missing');\"",
     "lint:prettier": "prettier --check src docs .github *.json *.md *.mjs",
     "format:prettier": "prettier --write src docs .github *.json *.md *.mjs",
     "lint:eslint": "eslint src",
@@ -87,7 +88,7 @@
     "sinon": "^21.0.1",
     "ts-node": "^10.9.1",
     "typedoc": "^0.28.15",
-    "typescript": "^5.7.2"
+    "typescript": "^6.0.3"
   },
   "optionalDependencies": {
     "commander": "^14.0.2"
