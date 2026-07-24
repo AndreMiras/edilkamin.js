@@ -73,7 +73,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "^24",
     "@types/pako": "^2.0.4",
-    "@types/sinon": "^21.0.0",
+    "@types/sinon": "^22.0.0",
     "@types/web-bluetooth": "^0.0.21",
     "@typescript-eslint/eslint-plugin": "^8.17.0",
     "@typescript-eslint/parser": "^8.17.0",
