@@ -1,5 +1,5 @@
 import { strict as assert } from "assert";
-import pako from "pako";
+import { gzip } from "pako";
 import sinon from "sinon";
 
 import { decompressBuffer, isBuffer, processResponse } from "./buffer-utils";
@@ -11,7 +11,7 @@ const createGzippedBuffer = (
   data: unknown,
 ): { type: "Buffer"; data: number[] } => {
   const json = JSON.stringify(data);
-  const compressed = pako.gzip(json);
+  const compressed = gzip(json);
   return {
     type: "Buffer",
     data: Array.from(compressed),
@@ -90,6 +90,14 @@ describe("buffer-utils", () => {
       assert.equal(result, originalData);
     });
 
+    it("should decode UTF-8 content", () => {
+      const originalData = { message: "Température: 21 °C 🔥" };
+      const bufferObj = createGzippedBuffer(originalData);
+
+      const result = decompressBuffer(bufferObj);
+      assert.deepEqual(result, originalData);
+    });
+
     it("should return original value if decompression fails", () => {
       const consoleWarnStub = sinon.stub(console, "warn");
       const invalidBuffer = { type: "Buffer" as const, data: [1, 2, 3] };
@@ -104,7 +112,7 @@ describe("buffer-utils", () => {
       const consoleWarnStub = sinon.stub(console, "warn");
       // Create valid gzip but invalid JSON
       const invalidJson = "not valid json {";
-      const compressed = pako.gzip(invalidJson);
+      const compressed = gzip(invalidJson);
       const bufferObj = {
         type: "Buffer" as const,
         data: Array.from(compressed),

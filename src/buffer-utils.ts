@@ -1,4 +1,4 @@
-import pako from "pako";
+import { ungzip } from "pako";
 
 import { BufferEncodedType } from "./types";
 
@@ -32,7 +32,7 @@ const decompressBuffer = (bufferObj: BufferEncodedType): unknown => {
     const compressed = new Uint8Array(bufferObj.data);
 
     // Decompress with gzip
-    const decompressed = pako.ungzip(compressed, { to: "string" });
+    const decompressed = new TextDecoder().decode(ungzip(compressed));
 
     // Parse JSON
     return JSON.parse(decompressed);

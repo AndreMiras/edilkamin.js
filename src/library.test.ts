@@ -1,6 +1,6 @@
 import { strict as assert } from "assert";
 import * as amplifyAuth from "aws-amplify/auth";
-import pako from "pako";
+import { gzip } from "pako";
 import sinon from "sinon";
 
 import {
@@ -41,7 +41,7 @@ const createGzippedBuffer = (
   data: unknown,
 ): { type: "Buffer"; data: number[] } => {
   const json = JSON.stringify(data);
-  const compressed = pako.gzip(json);
+  const compressed = gzip(json);
   return {
     type: "Buffer",
     data: Array.from(compressed),
