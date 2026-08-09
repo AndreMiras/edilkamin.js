@@ -65,14 +65,14 @@
   },
   "dependencies": {
     "aws-amplify": "^6.10.0",
-    "pako": "^2.1.0"
+    "pako": "^3.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^10.0.1",
     "@types/mocha": "^10.0.10",
     "@types/node": "^26",
-    "@types/pako": "^2.0.4",
+    "@types/pako": "^3.0.0",
     "@types/sinon": "^22.0.0",
     "@types/web-bluetooth": "^0.0.21",
     "@typescript-eslint/eslint-plugin": "^8.17.0",
