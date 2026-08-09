@@ -274,7 +274,7 @@ await setEasyTimer(token, mac, 0);
 - [x] AWS Amplify/ Cognito authentication
 - [x] unauthenticated endpoint call
 - [x] authenticated endpoint call
-- [ ] ~list stoves~
+- [ ] ~~list stoves~~
 - [x] turn stove on/off
 - [x] set temperature
 - [x] power level control
