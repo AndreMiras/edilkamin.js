@@ -71,7 +71,7 @@
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^10.0.1",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^24",
+    "@types/node": "^26",
     "@types/pako": "^2.0.4",
     "@types/sinon": "^22.0.0",
     "@types/web-bluetooth": "^0.0.21",
