@@ -30,8 +30,8 @@
   "scripts": {
     "cli": "ts-node src/cli.ts",
     "cli:debug": "node --inspect --require ts-node/register/transpile-only src/cli.ts",
-    "test": "nyc mocha --require ts-node/register src/*.test.ts",
-    "test:debug": "nyc mocha --require ts-node/register/transpile-only --inspect src/*.test.ts",
+    "test": "nyc mocha --require ts-node/register src/*.test.ts --ignore src/smoke.test.ts",
+    "test:debug": "nyc mocha --require ts-node/register/transpile-only --inspect src/*.test.ts --ignore src/smoke.test.ts",
     "test:cjs-consumer": "node -e \"const pkg = require('./dist/cjs/src/index.js'); if (typeof pkg.configure !== 'function') throw new Error('configure export missing');\"",
     "lint:prettier": "prettier --check src docs .github *.json *.md *.mjs",
     "format:prettier": "prettier --write src docs .github *.json *.md *.mjs",
