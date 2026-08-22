@@ -1,9 +1,7 @@
 import * as assert from "assert";
 import * as dotenv from "dotenv";
-import * as path from "path";
 
 import { initializeCommand } from "./cli";
-import { createFileStorage } from "./token-storage";
 
 dotenv.config();
 
@@ -24,8 +22,21 @@ describe("Smoke Test", function () {
   });
 
   it("should perform a real-world authentication and fetch device info", async () => {
-    const tempStoragePath = path.join(__dirname, "../.smoke-test-session.json");
-    const storage = createFileStorage(tempStoragePath);
+    const cache = new Map<string, string>();
+    const storage = {
+      setItem: async (key: string, value: string): Promise<void> => {
+        cache.set(key, value);
+      },
+      getItem: async (key: string): Promise<string | null> => {
+        return cache.get(key) ?? null;
+      },
+      removeItem: async (key: string): Promise<void> => {
+        cache.delete(key);
+      },
+      clear: async (): Promise<void> => {
+        cache.clear();
+      },
+    };
 
     const options = {
       username: EDILKAMIN_USERNAME,

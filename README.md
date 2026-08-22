@@ -103,7 +103,12 @@ yarn cli deviceInfo --mac $MAC --username $USERNAME --password $PASSWORD --legac
 
 ### Smoke Testing
 
-You can run a smoke test against the live Edilkamin API to verify the library's functionality.
+The smoke test always authenticates against the Edilkamin production service and
+performs one read-only `deviceInfo` request. It does not send device-control
+commands. Each run performs fresh authentication using in-memory session storage;
+authentication state is discarded when the process exits.
+
+#### Local
 
 1. Create a `.env` file in the root directory:
    ```env
@@ -116,6 +121,13 @@ You can run a smoke test against the live Edilkamin API to verify the library's 
    ```sh
    yarn test:smoke
    ```
+
+#### GitHub Actions
+
+The Production Smoke Test workflow runs after pushes to `main`, every Friday at
+17:17 UTC, and on manual dispatch. Every run targets the `production-smoke`
+Environment, which permits only `main`, and uses the new production API by
+default.
 
 ### Library Usage
 
