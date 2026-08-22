@@ -65,14 +65,18 @@ const addLegacyOption = (command: Command): Command =>
  * Handles common authentication and API initialization logic.
  * Tries to use existing session first, falls back to sign-in if needed.
  * @param options The options passed from the CLI command.
+ * @param storage A custom storage provider (optional).
  * @returns An object containing the normalized MAC, JWT token, and configured API instance.
  */
-const initializeCommand = async (options: {
-  username?: string;
-  password?: string;
-  mac: string;
-  legacy?: boolean;
-}): Promise<{
+export const initializeCommand = async (
+  options: {
+    username?: string;
+    password?: string;
+    mac: string;
+    legacy?: boolean;
+  },
+  storage: ReturnType<typeof createFileStorage> = createFileStorage(),
+): Promise<{
   normalizedMac: string;
   jwtToken: string;
   api: ReturnType<typeof configure>;
@@ -80,8 +84,7 @@ const initializeCommand = async (options: {
   const { username, password, mac, legacy = false } = options;
   const normalizedMac = normalizeMac(mac);
 
-  // Initialize file storage for session persistence
-  const storage = createFileStorage();
+  // Initialize storage for session persistence
   configureAmplify(storage);
 
   let jwtToken: string;
@@ -166,7 +169,7 @@ const createProgram = (): Command => {
     .option("-p, --password <password>", "Password")
     .action(async (options) => {
       const { username, password } = options;
-      // Initialize file storage for session persistence
+      // Initialize storage for session persistence
       const storage = createFileStorage();
       configureAmplify(storage);
       const pwd = password || (await promptPassword());
@@ -793,24 +796,8 @@ const createProgram = (): Command => {
       ),
     ),
   ).action(async (options) => {
-    const { username, password, mac, index, legacy = false } = options;
-    const normalizedMac = normalizeMac(mac);
-    const storage = createFileStorage();
-    configureAmplify(storage);
-    let jwtToken: string;
-    try {
-      jwtToken = await getSession(false, legacy);
-    } catch {
-      if (!username) {
-        throw new Error(
-          "No session found. Please provide --username to sign in.",
-        );
-      }
-      const pwd = password || (await promptPassword());
-      jwtToken = await signIn(username, pwd, legacy);
-    }
-    const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
-    const api = configure(apiUrl);
+    const { index } = options;
+    const { normalizedMac, jwtToken, api } = await initializeCommand(options);
     const result = await api.getFanSpeed(
       jwtToken,
       normalizedMac,
@@ -834,24 +821,8 @@ const createProgram = (): Command => {
       ),
     ),
   ).action(async (options) => {
-    const { username, password, mac, index, legacy = false } = options;
-    const normalizedMac = normalizeMac(mac);
-    const storage = createFileStorage();
-    configureAmplify(storage);
-    let jwtToken: string;
-    try {
-      jwtToken = await getSession(false, legacy);
-    } catch {
-      if (!username) {
-        throw new Error(
-          "No session found. Please provide --username to sign in.",
-        );
-      }
-      const pwd = password || (await promptPassword());
-      jwtToken = await signIn(username, pwd, legacy);
-    }
-    const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
-    const api = configure(apiUrl);
+    const { index } = options;
+    const { normalizedMac, jwtToken, api } = await initializeCommand(options);
     const result = await api.getTargetTemperature(
       jwtToken,
       normalizedMac,
@@ -876,24 +847,8 @@ const createProgram = (): Command => {
         .requiredOption("-v, --value <number>", "Fan speed (0-5)", parseFloat),
     ),
   ).action(async (options) => {
-    const { username, password, mac, index, value, legacy = false } = options;
-    const normalizedMac = normalizeMac(mac);
-    const storage = createFileStorage();
-    configureAmplify(storage);
-    let jwtToken: string;
-    try {
-      jwtToken = await getSession(false, legacy);
-    } catch {
-      if (!username) {
-        throw new Error(
-          "No session found. Please provide --username to sign in.",
-        );
-      }
-      const pwd = password || (await promptPassword());
-      jwtToken = await signIn(username, pwd, legacy);
-    }
-    const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
-    const api = configure(apiUrl);
+    const { index, value } = options;
+    const { normalizedMac, jwtToken, api } = await initializeCommand(options);
     const result = await api.setFanSpeed(
       jwtToken,
       normalizedMac,
@@ -922,24 +877,8 @@ const createProgram = (): Command => {
         ),
     ),
   ).action(async (options) => {
-    const { username, password, mac, index, value, legacy = false } = options;
-    const normalizedMac = normalizeMac(mac);
-    const storage = createFileStorage();
-    configureAmplify(storage);
-    let jwtToken: string;
-    try {
-      jwtToken = await getSession(false, legacy);
-    } catch {
-      if (!username) {
-        throw new Error(
-          "No session found. Please provide --username to sign in.",
-        );
-      }
-      const pwd = password || (await promptPassword());
-      jwtToken = await signIn(username, pwd, legacy);
-    }
-    const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
-    const api = configure(apiUrl);
+    const { index, value } = options;
+    const { normalizedMac, jwtToken, api } = await initializeCommand(options);
     const result = await api.setTargetTemperature(
       jwtToken,
       normalizedMac,
@@ -961,24 +900,7 @@ const createProgram = (): Command => {
       ),
     ),
   ).action(async (options) => {
-    const { username, password, mac, legacy = false } = options;
-    const normalizedMac = normalizeMac(mac);
-    const storage = createFileStorage();
-    configureAmplify(storage);
-    let jwtToken: string;
-    try {
-      jwtToken = await getSession(false, legacy);
-    } catch {
-      if (!username) {
-        throw new Error(
-          "No session found. Please provide --username to sign in.",
-        );
-      }
-      const pwd = password || (await promptPassword());
-      jwtToken = await signIn(username, pwd, legacy);
-    }
-    const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
-    const api = configure(apiUrl);
+    const { normalizedMac, jwtToken, api } = await initializeCommand(options);
     const result = await api.getAlarmHistory(jwtToken, normalizedMac);
     // Format alarms with human-readable descriptions
     const formattedAlarms = result.alarms.map((alarm) => ({
@@ -1006,36 +928,9 @@ const createProgram = (): Command => {
     .requiredOption("-n, --name <deviceName>", "Device name")
     .requiredOption("-r, --room <deviceRoom>", "Room name")
     .action(async (options) => {
-      const {
-        username,
-        password,
-        mac,
-        serial,
-        name,
-        room,
-        legacy = false,
-      } = options;
-      const normalizedMac = normalizeMac(mac);
+      const { serial, name, room } = options;
+      const { normalizedMac, jwtToken, api } = await initializeCommand(options);
 
-      // Initialize file storage for session persistence
-      const storage = createFileStorage();
-      configureAmplify(storage);
-
-      let jwtToken: string;
-      try {
-        jwtToken = await getSession(false, legacy);
-      } catch {
-        if (!username) {
-          throw new Error(
-            "No session found. Please provide --username to sign in.",
-          );
-        }
-        const pwd = password || (await promptPassword());
-        jwtToken = await signIn(username, pwd, legacy);
-      }
-
-      const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
-      const api = configure(apiUrl);
       const result = await api.registerDevice(
         jwtToken,
         normalizedMac,
@@ -1060,28 +955,9 @@ const createProgram = (): Command => {
     .requiredOption("-n, --name <deviceName>", "Device name")
     .requiredOption("-r, --room <deviceRoom>", "Room name")
     .action(async (options) => {
-      const { username, password, mac, name, room, legacy = false } = options;
-      const normalizedMac = normalizeMac(mac);
+      const { name, room } = options;
+      const { normalizedMac, jwtToken, api } = await initializeCommand(options);
 
-      // Initialize file storage for session persistence
-      const storage = createFileStorage();
-      configureAmplify(storage);
-
-      let jwtToken: string;
-      try {
-        jwtToken = await getSession(false, legacy);
-      } catch {
-        if (!username) {
-          throw new Error(
-            "No session found. Please provide --username to sign in.",
-          );
-        }
-        const pwd = password || (await promptPassword());
-        jwtToken = await signIn(username, pwd, legacy);
-      }
-
-      const apiUrl = legacy ? OLD_API_URL : NEW_API_URL;
-      const api = configure(apiUrl);
       const result = await api.editDevice(jwtToken, normalizedMac, name, room);
       console.log("Device updated successfully:");
       console.log(JSON.stringify(result, null, 2));

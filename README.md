@@ -99,6 +99,24 @@ yarn cli deviceInfo --mac $MAC --username $USERNAME --password $PASSWORD
 yarn cli deviceInfo --mac $MAC --username $USERNAME --password $PASSWORD --legacy
 ```
 
+## Development
+
+### Smoke Testing
+
+You can run a smoke test against the live Edilkamin API to verify the library's functionality.
+
+1. Create a `.env` file in the root directory:
+   ```env
+   EDILKAMIN_USERNAME=your_username
+   EDILKAMIN_PASSWORD=your_password
+   EDILKAMIN_MAC=your_device_mac
+   EDILKAMIN_LEGACY=false
+   ```
+2. Run the smoke test:
+   ```sh
+   yarn test:smoke
+   ```
+
 ### Library Usage
 
 ```js
